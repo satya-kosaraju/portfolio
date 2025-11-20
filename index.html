@@ -1,154 +1,373 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Satya Venkatesh Kosaraju | Portfolio</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Futuristic Scroll Animation Library -->
-  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- AOS Scroll Animation Library -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/aos@2.3.1/dist/aos.css"
+  />
 </head>
 
 <body>
-
-  <!-- Page Loading Overlay -->
+  <!-- Loading Overlay -->
   <div id="loading-overlay">
-    <!-- You can put SVG or animation here -->
-    <svg width="100" height="100" viewBox="0 0 100 100">
-      <!-- Example: spinning gear or particle cloud -->
-      <circle cx="50" cy="50" r="40" stroke="#6bc3ff" stroke-width="4" fill="none">
-        <animate attributeName="stroke-dasharray" from="0,251" to="251,0" dur="2s" repeatCount="indefinite" />
-      </circle>
-    </svg>
+    <div class="loader">
+      <div class="loader-ring"></div>
+      <div class="loader-text">Simulating DEM…</div>
+    </div>
   </div>
 
-  <!-- Navbar -->
+  <!-- Navigation -->
   <header class="navbar">
-    <nav>
-      <h2 class="logo">Satya Venkatesh Kosaraju</h2>
-      <ul>
+    <nav class="nav-inner">
+      <div class="logo">
+        <span class="logo-mark">SK</span>
+        <span class="logo-text">Satya Venkatesh Kosaraju</span>
+      </div>
+
+      <ul class="nav-links">
         <li><a href="#about">About</a></li>
         <li><a href="#dem">DEM</a></li>
         <li><a href="#projects">Projects</a></li>
         <li><a href="#skills">Skills</a></li>
         <li><a href="#contact">Contact</a></li>
+        <!-- CV button moved here -->
+        <li>
+          <a href="Satya_resume.pdf" class="btn-nav" target="_blank">
+            Download CV
+          </a>
+        </li>
       </ul>
     </nav>
   </header>
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-text" data-aos="fade-up" data-aos-duration="1000">
-      <h1>Hi, I’m <span>Satya</span> 👋</h1>
-      <p>Agricultural & Biosystems Engineer<br>DEM Simulation | Granular Flow | Machinery Design</p>
-      <a href="Satya_resume.pdf" class="btn">Download Resume</a>
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="hero-inner">
+      <div class="hero-text" data-aos="fade-up">
+        <p class="hero-tag">Agricultural &amp; Biosystems Engineer</p>
+        <h1>
+          I simulate <span>granular flow</span><br />
+          for smarter fertilizer spreading.
+        </h1>
+        <p class="hero-sub">
+          Master’s student at Iowa State University focusing on
+          Discrete Element Method (DEM), fertilizer spreaders, and
+          sustainable machinery systems.
+        </p>
+      </div>
+
+      <!-- DEM-inspired animated SVG + 3D cube -->
+      <div class="hero-visual" data-aos="fade-left">
+        <!-- Rotating cube -->
+        <div class="cube-wrapper">
+          <div class="cube">
+            <span class="face front">DEM</span>
+            <span class="face back">CFD</span>
+            <span class="face left">AOR</span>
+            <span class="face right">Hopper</span>
+            <span class="face top">Impact</span>
+            <span class="face bottom">Urea</span>
+          </div>
+        </div>
+
+        <!-- Animated DEM particles SVG -->
+        <div class="dem-svg-wrapper">
+          <svg
+            viewBox="0 0 220 140"
+            xmlns="http://www.w3.org/2000/svg"
+            class="dem-svg"
+          >
+            <!-- Plate -->
+            <rect
+              x="20"
+              y="100"
+              width="180"
+              height="6"
+              rx="3"
+              fill="rgba(111,196,255,0.5)"
+            />
+            <!-- Particle stream (simple parabolic path) -->
+            <path
+              d="M40,60 C90,10 140,10 190,60"
+              fill="none"
+              stroke="rgba(111,196,255,0.5)"
+              stroke-width="1.5"
+              stroke-dasharray="4 4"
+            />
+
+            <!-- Moving particles -->
+            <circle cx="40" cy="60" r="3" fill="#6bc3ff">
+              <animateMotion
+                dur="2s"
+                repeatCount="indefinite"
+                path="M0,0 C50,-50 100,-50 150,0"
+              />
+            </circle>
+            <circle cx="40" cy="60" r="3" fill="#97daff">
+              <animateMotion
+                dur="2.2s"
+                repeatCount="indefinite"
+                path="M0,0 C50,-50 100,-50 150,0"
+                begin="0.2s"
+              />
+            </circle>
+            <circle cx="40" cy="60" r="3" fill="#ffffff">
+              <animateMotion
+                dur="1.8s"
+                repeatCount="indefinite"
+                path="M0,0 C50,-50 100,-50 150,0"
+                begin="0.4s"
+              />
+            </circle>
+          </svg>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- About -->
-  <section id="about" class="section" data-aos="fade-up" data-aos-duration="800">
-    <h2>About Me</h2>
-    <p>I’m a Master’s student at Iowa State University specializing in Discrete Element Method (DEM), granular flow modeling, fertilizer spreader optimization, and agricultural machinery systems.</p>
+  <section id="about" class="section">
+    <div class="section-header" data-aos="fade-up">
+      <h2>About</h2>
+      <p>Who I am and what I’m working on.</p>
+    </div>
+    <div class="about-grid">
+      <div class="about-text" data-aos="fade-right">
+        <p>
+          I’m a graduate student in Agricultural &amp; Biosystems Engineering
+          at Iowa State University. My research focuses on
+          <strong>Discrete Element Method (DEM)</strong> modeling of dry
+          fertilizer, calibration using
+          <strong>angle of repose</strong>,
+          and multi-method validation with hopper discharge and impact plate
+          tests.
+        </p>
+        <p>
+          I enjoy building the bridge between
+          <strong>experimental data</strong> and
+          <strong>simulation</strong> — tuning DEM parameters, validating
+          models, and turning complex granular flow behavior into usable
+          insights for machinery design.
+        </p>
+        <a href="Satya_resume.pdf" class="link-inline" target="_blank">
+          ↳ Download full CV
+        </a>
+      </div>
+      <div class="about-meta" data-aos="fade-left">
+        <div class="meta-card">
+          <span class="meta-label">Current Role</span>
+          <span class="meta-value">Research Assistant, ISU</span>
+        </div>
+        <div class="meta-card">
+          <span class="meta-label">Focus</span>
+          <span class="meta-value">DEM calibration &amp; validation</span>
+        </div>
+        <div class="meta-card">
+          <span class="meta-label">Tools</span>
+          <span class="meta-value">EDEM · MATLAB · Python · CAD</span>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <!-- DEM Workflow Section -->
-  <section id="dem" class="section dark-section">
-    <h2 data-aos="fade-up" data-aos-duration="800">DEM Simulation Workflow</h2>
-
-    <!-- Particle/flow background SVG -->
-    <div class="particles-bg">
-      <!-- Insert animated particle SVG or CSS canvas effect -->
+  <!-- DEM Workflow -->
+  <section id="dem" class="section section-dark">
+    <div class="section-header" data-aos="fade-up">
+      <h2>DEM Simulation Workflow</h2>
+      <p>
+        From physical fertilizer to calibrated, validated DEM model.
+      </p>
     </div>
 
-    <div class="workflow-container">
-      <div class="workflow-card" data-aos="fade-right" data-aos-duration="700">
-        <h3>1. Material Characterization</h3>
-        <p>Particle size distribution, density, shape, friction, restitution.</p>
-      </div>
+    <!-- engineering-looking grid background -->
+    <div class="grid-bg"></div>
 
-      <div class="workflow-card" data-aos="fade-up" data-aos-duration="700">
-        <h3>2. Calibration (AOR Test)</h3>
-        <p>DEM parameters tuned using static angle of repose experiments.</p>
+    <div class="workflow-grid">
+      <div class="workflow-card" data-aos="fade-up">
+        <span class="step-number">01</span>
+        <h3>Material Characterization</h3>
+        <p>
+          Particle size distribution, shape, density, friction, and restitution
+          measured to define input material properties.
+        </p>
       </div>
-
-      <div class="workflow-card" data-aos="fade-left" data-aos-duration="700">
-        <h3>3. Validation</h3>
-        <p>Hopper discharge and impact plate tests to verify DEM accuracy.</p>
+      <div class="workflow-card" data-aos="fade-up" data-aos-delay="80">
+        <span class="step-number">02</span>
+        <h3>Calibration (AOR)</h3>
+        <p>
+          Static angle of repose experiments used to tune DEM contact
+          parameters until the simulated heap matches physical behavior.
+        </p>
       </div>
-
-      <div class="workflow-card" data-aos="zoom-in" data-aos-duration="700">
-        <h3>4. Simulation & Analysis</h3>
-        <p>Urea flow behavior, spreader performance, and distribution modeling.</p>
+      <div class="workflow-card" data-aos="fade-up" data-aos-delay="160">
+        <span class="step-number">03</span>
+        <h3>Validation</h3>
+        <p>
+          Independent setups—hopper discharge and impact plate tests—verify
+          that the DEM model generalizes beyond calibration.
+        </p>
+      </div>
+      <div class="workflow-card" data-aos="fade-up" data-aos-delay="240">
+        <span class="step-number">04</span>
+        <h3>Spreader Simulation</h3>
+        <p>
+          Full spinning-disk spreader simulations predict distribution
+          patterns and inform machine settings for uniform application.
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- YouTube DEM Animation -->
-  <section class="section" data-aos="fade-up" data-aos-duration="800">
-    <h2>Fertilizer Spreader DEM Animation</h2>
-    <div class="video-container">
-      <iframe width="560" height="315"
-        src="https://www.youtube.com/embed/Ek-IkwTqM0g"
-        frameborder="0"
-        allowfullscreen>
-      </iframe>
+  <!-- DEM Video -->
+  <section class="section">
+    <div class="section-header" data-aos="fade-up">
+      <h2>Fertilizer Spreader DEM Animation</h2>
+      <p>A visual of spinning-disk fertilizer distribution.</p>
+    </div>
+
+    <div class="video-shell" data-aos="zoom-in">
+      <div class="video-frame">
+        <iframe
+          src="https://www.youtube.com/embed/Ek-IkwTqM0g"
+          title="Fertilizer Spreader DEM Simulation"
+          frameborder="0"
+          allowfullscreen
+        ></iframe>
+      </div>
     </div>
   </section>
 
   <!-- Projects -->
   <section id="projects" class="section">
-    <h2 data-aos="fade-up" data-aos-duration="800">Projects</h2>
+    <div class="section-header" data-aos="fade-up">
+      <h2>Selected Projects</h2>
+      <p>Engineering work with a focus on DEM and machinery.</p>
+    </div>
 
-    <div class="card-grid">
-      <div class="card project-card" data-aos="fade-up" data-aos-duration="600">
-        <h3>DEM Calibration & Validation</h3>
-        <p>Urea characterization, AOR calibration, hopper discharge validation.</p>
-      </div>
+    <div class="projects-grid">
+      <article class="project-card" data-aos="fade-up">
+        <div class="project-thumb dem-thumb">
+          <span class="thumb-label">DEM</span>
+        </div>
+        <div class="project-body">
+          <h3>DEM Calibration &amp; Multi-Method Validation</h3>
+          <p>
+            Urea fertilizer DEM model calibrated using angle of repose
+            experiments and validated with hopper discharge and impact plate
+            tests.
+          </p>
+        </div>
+      </article>
 
-      <div class="card project-card" data-aos="fade-up" data-aos-duration="600">
-        <h3>Fertilizer Spreader DEM Simulation</h3>
-        <p>Full spinning-disk simulation of urea particles and spread pattern.</p>
-      </div>
+      <article class="project-card" data-aos="fade-up" data-aos-delay="80">
+        <div class="project-thumb spreader-thumb">
+          <span class="thumb-label">Spreader</span>
+        </div>
+        <div class="project-body">
+          <h3>Fertilizer Spreader DEM Simulation</h3>
+          <p>
+            Simulated a spinning-disk spreader to study particle trajectories,
+            spread pattern uniformity, and sensitivity to machine settings.
+          </p>
+        </div>
+      </article>
 
-      <div class="card project-card" data-aos="fade-up" data-aos-duration="600">
-        <h3>Robotic Irrigation System (Patent)</h3>
-        <p>Smart irrigation prototype with automation system.</p>
-      </div>
+      <article class="project-card" data-aos="fade-up" data-aos-delay="160">
+        <div class="project-thumb robotics-thumb">
+          <span class="thumb-label">Robotics</span>
+        </div>
+        <div class="project-body">
+          <h3>Robotic Irrigation System (Patent)</h3>
+          <p>
+            Developed an automated irrigation system with controlled water
+            application based on crop and soil conditions.
+          </p>
+        </div>
+      </article>
 
-      <div class="card project-card" data-aos="fade-up" data-aos-duration="600">
-        <h3>Solar Briquetting Machine</h3>
-        <p>Designed a renewable energy integrated briquetting machine.</p>
-      </div>
+      <article class="project-card" data-aos="fade-up" data-aos-delay="240">
+        <div class="project-thumb machine-thumb">
+          <span class="thumb-label">Machine</span>
+        </div>
+        <div class="project-body">
+          <h3>Solar Integrated Briquetting Machine</h3>
+          <p>
+            Designed a briquetting machine powered with solar integration for
+            sustainable biomass utilization.
+          </p>
+        </div>
+      </article>
     </div>
   </section>
 
   <!-- Skills -->
-  <section id="skills" class="section dark-section">
-    <h2 data-aos="fade-up" data-aos-duration="800">Technical Skills</h2>
-    <p data-aos="fade-up" data-aos-duration="800">EDEM | MATLAB | Python | SolidWorks | AutoCAD | Fusion360 | CFD | Data Analysis</p>
+  <section id="skills" class="section section-dark">
+    <div class="section-header" data-aos="fade-up">
+      <h2>Technical Stack</h2>
+      <p>Tools I use to model, simulate, and analyze.</p>
+    </div>
+
+    <div class="skills-pills" data-aos="fade-up">
+      <span class="pill">EDEM</span>
+      <span class="pill">MATLAB</span>
+      <span class="pill">Python</span>
+      <span class="pill">SolidWorks</span>
+      <span class="pill">AutoCAD</span>
+      <span class="pill">Fusion 360</span>
+      <span class="pill">CFD Basics</span>
+      <span class="pill">Data Analysis</span>
+    </div>
   </section>
 
   <!-- Contact -->
-  <section id="contact" class="section" data-aos="fade-up" data-aos-duration="800">
-    <h2>Contact</h2>
-    <p>Email: <a href="mailto:satya.v.kosaraju@gmail.com">satya.v.kosaraju@gmail.com</a></p>
-    <p>LinkedIn: <a href="https://linkedin.com/in/satya-kosaraju" target="_blank">linkedin.com/in/satya-kosaraju</a></p>
+  <section id="contact" class="section">
+    <div class="section-header" data-aos="fade-up">
+      <h2>Contact</h2>
+      <p>Let’s talk about DEM, machinery, or collaborations.</p>
+    </div>
+
+    <div class="contact-block" data-aos="fade-up">
+      <p>
+        Email:
+        <a href="mailto:satya.v.kosaraju@gmail.com">
+          satya.v.kosaraju@gmail.com
+        </a>
+      </p>
+      <p>
+        LinkedIn:
+        <a href="https://linkedin.com/in/satya-kosaraju" target="_blank">
+          linkedin.com/in/satya-kosaraju
+        </a>
+      </p>
+    </div>
   </section>
 
   <footer>
-    <p>© 2025 Satya Kosaraju</p>
+    <p>© 2025 · Satya Venkatesh Kosaraju</p>
   </footer>
 
-  <!-- AOS Animation Script -->
+  <!-- AOS + basic JS -->
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function(){
+    document.addEventListener("DOMContentLoaded", function () {
       AOS.init({
         once: true,
-        duration: 800
+        duration: 700,
+        easing: "ease-out-cubic",
       });
-      // remove loading overlay
-      document.getElementById('loading-overlay').classList.add('loaded');
+
+      // Loading overlay fade-out
+      const overlay = document.getElementById("loading-overlay");
+      setTimeout(() => {
+        overlay.classList.add("loaded");
+      }, 600);
     });
   </script>
 </body>
