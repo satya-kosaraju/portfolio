@@ -1,203 +1,217 @@
-/* ========= Global Styles ========= */
-
+/* --------------------
+   GENERAL STYLE
+----------------------- */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   scroll-behavior: smooth;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #0b0f19;
-  color: #e6eefc;
+  background: #040d21;
+  color: #e8e8e8;
   line-height: 1.6;
 }
 
-/* ========= Navbar ========= */
+/* Section layout */
+section {
+  padding: 80px 10%;
+}
 
+/* --------------------
+   NAVBAR
+----------------------- */
 header {
-  background: rgba(10, 15, 25, 0.8);
-  backdrop-filter: blur(10px);
-  position: fixed;
   width: 100%;
+  position: fixed;
   top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   z-index: 1000;
-  padding: 15px 0;
-  border-bottom: 1px solid #1b2335;
+  padding: 15px 10%;
+  border-bottom: 1px solid #1e2a44;
 }
 
 nav {
-  width: 90%;
-  margin: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 nav h2 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #58a6ff;
+  color: #6bc3ff;
+  font-size: 22px;
+  letter-spacing: 1px;
 }
 
 nav ul {
-  list-style: none;
   display: flex;
-  gap: 25px;
+  list-style: none;
+}
+
+nav ul li {
+  margin-left: 20px;
 }
 
 nav ul li a {
-  color: #cdd9e5;
+  color: #e8e8e8;
   text-decoration: none;
-  font-size: 15px;
-  position: relative;
+  font-size: 16px;
   transition: 0.3s;
 }
 
 nav ul li a:hover {
-  color: #58a6ff;
+  color: #6bc3ff;
 }
 
-/* Hover underline */
-nav ul li a::after {
-  content: "";
-  position: absolute;
-  width: 0%;
-  height: 2px;
-  background: #58a6ff;
-  left: 0;
-  bottom: -3px;
-  transition: 0.3s;
-}
-
-nav ul li a:hover::after {
-  width: 100%;
-}
-
-/* ========= Hero Section ========= */
-
+/* --------------------
+   HERO SECTION
+----------------------- */
 .hero {
   height: 100vh;
-  background: linear-gradient(to bottom right, #101727, #0b0f19);
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding-top: 80px;
+  background: linear-gradient(135deg, #08142d, #0a1c3d);
+  color: white;
+  animation: fadeIn 1.2s ease-in-out;
 }
 
 .hero h1 {
-  font-size: 55px;
-  color: #58a6ff;
-  animation: fadeUp 1.5s ease;
+  font-size: 48px;
+  margin-bottom: 15px;
 }
 
 .hero p {
-  color: #cdd9e5;
-  margin: 15px 0;
-  font-size: 19px;
-  animation: fadeUp 2s ease;
+  font-size: 20px;
+  margin-bottom: 20px;
 }
 
 .btn {
-  display: inline-block;
-  padding: 12px 25px;
-  border-radius: 8px;
-  background: #58a6ff;
-  color: #0b0f19;
-  font-weight: 600;
+  background: #6bc3ff;
+  padding: 12px 20px;
+  border-radius: 6px;
   text-decoration: none;
+  color: #000;
+  font-weight: bold;
   transition: 0.3s;
-  animation: fadeUp 2.4s ease;
 }
 
 .btn:hover {
-  background: #1f6feb;
-  transform: translateY(-3px);
+  background: #97daff;
+  transform: scale(1.05);
 }
 
-/* ========= General Section Style ========= */
-
-section {
-  padding: 80px 10%;
-}
-
+/* --------------------
+   SECTIONS
+----------------------- */
 h2 {
-  font-size: 35px;
+  color: #6bc3ff;
+  font-size: 32px;
   margin-bottom: 20px;
-  color: #6ea8ff;
 }
-
-/* ========= Cards ========= */
 
 .card {
-  background: #111928;
   padding: 20px;
-  margin: 15px 0;
-  border-left: 4px solid #58a6ff;
-  border-radius: 8px;
+  margin-bottom: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 3px solid #6bc3ff;
+  border-radius: 6px;
   transition: 0.3s;
-  box-shadow: 0px 0px 8px rgba(0, 153, 255, 0.1);
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0px 0px 15px rgba(0, 153, 255, 0.2);
+  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.09);
 }
 
-/* ========= Projects List ========= */
-
-#projects ul {
-  list-style: none;
-  margin-left: 10px;
+/* --------------------
+   PROJECTS GRID
+----------------------- */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-gap: 20px;
 }
 
-#projects ul li {
-  background: #111928;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 6px;
-  border-left: 4px solid #1f6feb;
+.project-box {
+  padding: 20px;
+  border-radius: 8px;
+  background: #0d1a33;
+  border: 1px solid #143464;
   transition: 0.3s;
 }
 
-#projects ul li:hover {
-  transform: translateX(10px);
-  background: #0d1522;
+.project-box:hover {
+  transform: translateY(-5px);
+  border-color: #6bc3ff;
 }
 
-/* ========= Footer ========= */
+.project-box h3 {
+  color: #6bc3ff;
+  margin-bottom: 10px;
+}
 
+/* --------------------
+   DEM VIDEO & WORKFLOW
+----------------------- */
+.video-container {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.video-container iframe {
+  width: 80%;
+  height: 350px;
+  border-radius: 10px;
+  border: 2px solid #143464;
+}
+
+.workflow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.workflow-step {
+  padding: 15px;
+  background: rgba(107, 195, 255, 0.08);
+  border-left: 3px solid #6bc3ff;
+  border-radius: 5px;
+}
+
+/* --------------------
+   CONTACT
+----------------------- */
+#contact a {
+  color: #6bc3ff;
+  text-decoration: none;
+}
+
+#contact a:hover {
+  text-decoration: underline;
+}
+
+/* --------------------
+   FOOTER
+----------------------- */
 footer {
   text-align: center;
   padding: 20px;
-  background: #0b0f19;
-  border-top: 1px solid #1b2335;
-  color: #7c8599;
+  background: #020812;
+  color: #777;
+  margin-top: 20px;
 }
 
-/* ========= Animations ========= */
-
-@keyframes fadeUp {
-  0% {
-    opacity: 0;
-    transform: translateY(25px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ========= Responsive ========= */
-
-@media (max-width: 768px) {
-  nav ul {
-    display: none;
-  }
-
-  .hero h1 {
-    font-size: 40px;
-  }
+/* --------------------
+   ANIMATIONS
+----------------------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0);}
 }
