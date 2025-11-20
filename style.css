@@ -1,15 +1,25 @@
+/* Global Styles */
 body {
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  line-height: 1.6;
+  font-family: "Poppins", sans-serif;
+  background: #f4f6ff;
+  color: #222;
 }
 
+.container {
+  width: 90%;
+  max-width: 1100px;
+  margin: auto;
+}
+
+/* Navbar */
 header {
-  background: #0d1b2a;
-  color: #fff;
-  padding: 10px 20px;
+  background: #0b1e46;
+  color: white;
+  padding: 12px 0;
   position: sticky;
   top: 0;
+  z-index: 10;
 }
 
 nav {
@@ -18,53 +28,130 @@ nav {
   align-items: center;
 }
 
-nav ul {
+.logo {
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.nav-links {
   list-style: none;
-  display: flex;
-  gap: 15px;
 }
 
-nav a {
-  color: #fff;
+.nav-links li {
+  display: inline-block;
+  margin-left: 20px;
+}
+
+.nav-links a {
+  color: white;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 500;
 }
 
+.nav-links a:hover {
+  color: #ffd700;
+}
+
+/* Hero */
 .hero {
-  background: linear-gradient(to right, #1b263b, #415a77);
-  color: #fff;
+  padding: 90px 0;
   text-align: center;
-  padding: 80px 20px;
+}
+
+.hero h1 span {
+  color: #0b1e46;
+  font-weight: 700;
 }
 
 .btn {
+  background: #0b1e46;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 6px;
   display: inline-block;
-  margin-top: 15px;
-  padding: 10px 20px;
-  background: #e0aaff;
-  color: #000;
-  border-radius: 5px;
   text-decoration: none;
+  margin-top: 15px;
 }
 
-section {
-  padding: 40px 20px;
-  max-width: 900px;
-  margin: auto;
+.btn:hover {
+  background: #143c70;
+}
+
+/* Sections */
+.section {
+  margin-top: 70px;
+  text-align: center;
+}
+
+.section-title {
+  font-size: 28px;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+/* Cards */
+.cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .card {
-  background: #f4f4f4;
-  padding: 15px;
-  margin: 10px 0;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background: white;
+  padding: 20px;
+  width: 300px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-footer {
-  background: #0d1b2a;
-  color: #fff;
+.card:hover {
+  transform: translateY(-5px);
+  transition: 0.3s ease;
+}
+
+/* Projects */
+.project-list {
+  list-style: none;
+  padding: 0;
+}
+.project-list li {
+  margin: 10px 0;
+  font-size: 17px;
+}
+
+/* Video Section */
+.video-wrapper {
   text-align: center;
-  padding: 15px;
   margin-top: 20px;
+}
+
+.video-wrapper iframe {
+  width: 85%;
+  height: 400px;
+  border-radius: 10px;
+}
+
+.video-description {
+  margin-top: 15px;
+}
+
+/* Skills */
+.tag-box span {
+  background: #0b1e46;
+  color: white;
+  padding: 8px 14px;
+  margin: 6px;
+  display: inline-block;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+/* Footer */
+footer {
+  margin-top: 60px;
+  padding: 20px;
+  text-align: center;
+  background: #0b1e46;
+  color: white;
 }
