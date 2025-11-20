@@ -1,6 +1,6 @@
-/* --------------------
-   GENERAL STYLE
------------------------ */
+/* ==========================
+   GLOBAL
+========================== */
 * {
   margin: 0;
   padding: 0;
@@ -10,28 +10,35 @@
 }
 
 body {
-  background: #040d21;
+  background: radial-gradient(circle at top, #102a54 0, #040d21 45%, #020712 100%);
   color: #e8e8e8;
   line-height: 1.6;
 }
 
-/* Section layout */
-section {
+/* General section spacing */
+.section {
   padding: 80px 10%;
 }
 
-/* --------------------
+/* Headings */
+h2 {
+  color: #6bc3ff;
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+
+/* ==========================
    NAVBAR
------------------------ */
-header {
+========================== */
+.navbar {
   width: 100%;
   position: fixed;
   top: 0;
   left: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(2, 8, 18, 0.9);
+  backdrop-filter: blur(10px);
   z-index: 1000;
-  padding: 15px 10%;
+  padding: 14px 10%;
   border-bottom: 1px solid #1e2a44;
 }
 
@@ -41,10 +48,10 @@ nav {
   align-items: center;
 }
 
-nav h2 {
+.logo {
   color: #6bc3ff;
-  font-size: 22px;
-  letter-spacing: 1px;
+  font-size: 20px;
+  letter-spacing: 0.5px;
 }
 
 nav ul {
@@ -59,135 +66,228 @@ nav ul li {
 nav ul li a {
   color: #e8e8e8;
   text-decoration: none;
-  font-size: 16px;
-  transition: 0.3s;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 3px;
 }
 
-nav ul li a:hover {
-  color: #6bc3ff;
+/* underline hover effect */
+nav ul li a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: #6bc3ff;
+  transition: width 0.25s ease;
 }
 
-/* --------------------
+nav ul li a:hover::after {
+  width: 100%;
+}
+
+/* Offset body content due to fixed navbar */
+body {
+  padding-top: 70px;
+}
+
+/* ==========================
    HERO SECTION
------------------------ */
+========================== */
 .hero {
-  height: 100vh;
+  height: calc(100vh - 70px);
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
-  background: linear-gradient(135deg, #08142d, #0a1c3d);
-  color: white;
-  animation: fadeIn 1.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+/* subtle moving grid / dots background for engineering feel */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0);
+  background-size: 40px 40px;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.hero-text {
+  position: relative;
+  max-width: 600px;
+  padding: 20px 30px;
+  background: radial-gradient(circle at top, rgba(107,195,255,0.18), rgba(3,9,20,0.95));
+  border-radius: 16px;
+  border: 1px solid rgba(107,195,255,0.4);
+  box-shadow: 0 0 25px rgba(0,0,0,0.5);
+}
+
+.hero-kicker {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #97daff;
+  margin-bottom: 8px;
 }
 
 .hero h1 {
-  font-size: 48px;
-  margin-bottom: 15px;
+  font-size: 42px;
+  margin-bottom: 10px;
 }
 
-.hero p {
-  font-size: 20px;
-  margin-bottom: 20px;
+.hero h1 span {
+  color: #6bc3ff;
 }
 
+.hero-sub {
+  font-size: 18px;
+  margin-bottom: 22px;
+  color: #d0e7ff;
+}
+
+/* Button */
 .btn {
+  display: inline-block;
   background: #6bc3ff;
-  padding: 12px 20px;
-  border-radius: 6px;
+  padding: 12px 22px;
+  border-radius: 999px;
   text-decoration: none;
-  color: #000;
-  font-weight: bold;
-  transition: 0.3s;
+  color: #020812;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 12px rgba(107,195,255,0.6);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .btn:hover {
   background: #97daff;
-  transform: scale(1.05);
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(151,218,255,0.9);
 }
 
-/* --------------------
-   SECTIONS
------------------------ */
-h2 {
-  color: #6bc3ff;
-  font-size: 32px;
-  margin-bottom: 20px;
+/* ==========================
+   DARK SECTION
+========================== */
+.dark-section {
+  background: rgba(4, 13, 33, 0.9);
+  border-top: 1px solid #142645;
+  border-bottom: 1px solid #142645;
+}
+
+/* ==========================
+   DEM WORKFLOW
+========================== */
+.workflow-container {
+  margin-top: 25px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+.workflow-card {
+  padding: 18px 20px;
+  background: rgba(10, 25, 55, 0.95);
+  border-radius: 10px;
+  border: 1px solid rgba(107,195,255,0.5);
+  box-shadow: 0 0 15px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+/* subtle line on left for “flow” */
+.workflow-card::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 15%;
+  width: 4px;
+  height: 70%;
+  background: linear-gradient(to bottom, #97daff, #6bc3ff);
+  opacity: 0.8;
+}
+
+.workflow-card h3 {
+  color: #97daff;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+.workflow-card p {
+  font-size: 14px;
+  color: #d0e7ff;
+}
+
+/* ==========================
+   VIDEO
+========================== */
+.video-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.video-container iframe {
+  width: 100%;
+  max-width: 720px;
+  height: 400px;
+  border-radius: 12px;
+  border: 2px solid #143464;
+  background: #000;
+}
+
+/* ==========================
+   PROJECTS GRID
+========================== */
+.card-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
 }
 
 .card {
   padding: 20px;
-  margin-bottom: 15px;
-  background: rgba(255, 255, 255, 0.05);
-  border-left: 3px solid #6bc3ff;
-  border-radius: 6px;
-  transition: 0.3s;
-}
-
-.card:hover {
-  transform: translateX(5px);
-  background: rgba(255, 255, 255, 0.09);
-}
-
-/* --------------------
-   PROJECTS GRID
------------------------ */
-.project-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  grid-gap: 20px;
-}
-
-.project-box {
-  padding: 20px;
-  border-radius: 8px;
-  background: #0d1a33;
+  background: rgba(9, 21, 50, 0.95);
+  border-radius: 10px;
   border: 1px solid #143464;
-  transition: 0.3s;
+  box-shadow: 0 0 12px rgba(0,0,0,0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.project-box:hover {
-  transform: translateY(-5px);
-  border-color: #6bc3ff;
-}
-
-.project-box h3 {
+.card h3 {
   color: #6bc3ff;
   margin-bottom: 10px;
 }
 
-/* --------------------
-   DEM VIDEO & WORKFLOW
------------------------ */
-.video-container {
-  text-align: center;
-  margin-top: 30px;
+.card p {
+  font-size: 14px;
+  color: #d0e7ff;
 }
 
-.video-container iframe {
-  width: 80%;
-  height: 350px;
-  border-radius: 10px;
-  border: 2px solid #143464;
+.card:hover {
+  transform: translateY(-4px);
+  border-color: #6bc3ff;
+  box-shadow: 0 0 20px rgba(107,195,255,0.6);
 }
 
-.workflow {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
+/* ==========================
+   SKILLS
+========================== */
+.skills-list {
+  font-size: 16px;
+  margin-top: 10px;
 }
 
-.workflow-step {
-  padding: 15px;
-  background: rgba(107, 195, 255, 0.08);
-  border-left: 3px solid #6bc3ff;
-  border-radius: 5px;
-}
-
-/* --------------------
+/* ==========================
    CONTACT
------------------------ */
+========================== */
 #contact a {
   color: #6bc3ff;
   text-decoration: none;
@@ -197,21 +297,40 @@ h2 {
   text-decoration: underline;
 }
 
-/* --------------------
+/* ==========================
    FOOTER
------------------------ */
+========================== */
 footer {
   text-align: center;
   padding: 20px;
   background: #020812;
   color: #777;
-  margin-top: 20px;
+  border-top: 1px solid #10182a;
 }
 
-/* --------------------
-   ANIMATIONS
------------------------ */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0);}
+/* ==========================
+   RESPONSIVE
+========================== */
+@media (max-width: 768px) {
+  nav ul {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+  }
+
+  .section {
+    padding: 60px 7%;
+  }
+
+  .video-container iframe {
+    height: 230px;
+  }
 }
