@@ -5,18 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Satya Venkatesh Kosaraju | Portfolio</title>
   <link rel="stylesheet" href="style.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-  <!-- Navbar -->
+  <!-- NAVBAR -->
   <header>
-    <nav>
-      <h2>Satya Venkatesh Kosaraju</h2>
-      <ul>
+    <nav class="container">
+      <h2 class="logo">Satya Venkatesh Kosaraju</h2>
+      <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#education">Education</a></li>
         <li><a href="#experience">Experience</a></li>
         <li><a href="#projects">Projects</a></li>
-        <li><a href="#video">Demo Video</a></li>
+        <li><a href="#video">Video</a></li>
         <li><a href="#skills">Skills</a></li>
         <li><a href="#awards">Awards</a></li>
         <li><a href="#contact">Contact</a></li>
@@ -24,92 +29,112 @@
     </nav>
   </header>
 
-  <!-- Hero -->
-  <section id="home" class="hero">
-    <div>
-      <h1>Hi, I’m Satya 👋</h1>
-      <p>Agricultural & Biosystems Engineer | DEM Simulation | Research Assistant at ISU</p>
+  <!-- HERO SECTION -->
+  <section id="home" class="hero container">
+    <div class="hero-content">
+      <h1>Hi, I’m <span>Satya 👋</span></h1>
+      <p>Agricultural & Biosystems Engineer • DEM Simulation • Fertilizer Spread Systems</p>
       <a href="Satya_resume.pdf" class="btn">Download Resume</a>
     </div>
   </section>
 
-  <!-- About -->
-  <section id="about">
-    <h2>About Me</h2>
-    <p>I’m a Master’s student at Iowa State University specializing in DEM-based fertilizer spreader optimization and granular flow modeling. Passionate about simulation, sustainable agriculture, and innovative machinery design.</p>
+  <!-- ABOUT -->
+  <section id="about" class="container section">
+    <h2 class="section-title">About Me</h2>
+    <p>
+      I am a Master’s student at Iowa State University working on DEM-based fertilizer spreader
+      optimization and granular flow modeling. I love simulation, experimental validation, and 
+      machine design for sustainable agriculture.
+    </p>
   </section>
 
-  <!-- Education -->
-  <section id="education">
-    <h2>Education</h2>
-    <div class="card">
-      <h3>M.Sc. Agricultural & Biosystems Engineering</h3>
-      <p>Iowa State University, 2025</p>
-    </div>
-    <div class="card">
-      <h3>B.Tech Agricultural Engineering</h3>
-      <p>Vignan’s Foundation, India, 2023</p>
-    </div>
-  </section>
+  <!-- EDUCATION -->
+  <section id="education" class="container section">
+    <h2 class="section-title">Education</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>M.Sc. Agricultural & Biosystems Engineering</h3>
+        <p>Iowa State University (2025)</p>
+      </div>
 
-  <!-- Experience -->
-  <section id="experience">
-    <h2>Experience</h2>
-    <div class="card">
-      <h3>Research Assistant | Iowa State University + John Deere</h3>
-      <p>Optimized fertilizer spreaders using DEM modeling, CAD, and simulation validation.</p>
+      <div class="card">
+        <h3>B.Tech Agricultural Engineering</h3>
+        <p>Vignan’s Foundation for Science, India (2023)</p>
+      </div>
     </div>
   </section>
 
-  <!-- Projects -->
-  <section id="projects">
-    <h2>Projects</h2>
-    <ul>
-      <li><b>Robotic Irrigation System</b> (Patent 2021)</li>
+  <!-- EXPERIENCE -->
+  <section id="experience" class="container section">
+    <h2 class="section-title">Experience</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>Research Assistant | ISU + John Deere</h3>
+        <p>
+          Topics: DEM modeling, fertilizer spread uniformity, hopper discharge validation, and 
+          machine design using CAD & simulation tools.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects" class="container section">
+    <h2 class="section-title">Projects</h2>
+
+    <ul class="project-list">
+      <li><strong>Robotic Irrigation System</strong> (Patent 2021)</li>
       <li>Solar Integrated Briquetting Machine</li>
-      <li>Hydroponics System</li>
-      <li>Tractor Mounted Seedling Transplanter</li>
+      <li>Hydroponics System Development</li>
+      <li>Tractor-Mounted Seedling Transplanter</li>
     </ul>
   </section>
 
-  <!-- Demo Video Section -->
-  <section id="video">
-    <h2>Fertilizer Spreader Simulation Demo</h2>
-    <p>Here is a video demonstrating the spreader distribution pattern similar to my research simulation work.</p>
+  <!-- VIDEO SHOWCASE -->
+  <section id="video" class="container section">
+    <h2 class="section-title">Video Showcase</h2>
 
-    <div style="text-align:center; margin-top:20px;">
-      <iframe width="560" height="315"
+    <div class="video-wrapper">
+      <iframe 
         src="https://www.youtube.com/embed/Ek-IkwTqM0g"
-        title="YouTube video player"
+        title="Fertilizer Spreader DEM Video"
         frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen>
       </iframe>
     </div>
+
+    <p class="video-description">
+      This animation shows a real-world fertilizer spreader distribution pattern—part of my ongoing DEM research work.
+    </p>
   </section>
 
-  <!-- Skills -->
-  <section id="skills">
-    <h2>Technical Skills</h2>
-    <p>AutoCAD | SolidWorks | Fusion360 | EDEM | CFD | MATLAB | Python</p>
+  <!-- SKILLS -->
+  <section id="skills" class="container section">
+    <h2 class="section-title">Technical Skills</h2>
+
+    <div class="tag-box">
+      <span>EDEM</span><span>CAD (SolidWorks / Fusion)</span><span>MATLAB</span>
+      <span>Python</span><span>CFD</span><span>AutoCAD</span>
+    </div>
   </section>
 
-  <!-- Awards -->
-  <section id="awards">
-    <h2>Awards</h2>
-    <p>🏅 Best Outgoing Student, Vignan University, 2023</p>
+  <!-- AWARDS -->
+  <section id="awards" class="container section">
+    <h2 class="section-title">Awards</h2>
+    <p>🏅 Best Outgoing Student — Vignan University (2023)</p>
   </section>
 
-  <!-- Contact -->
-  <section id="contact">
-    <h2>Contact</h2>
+  <!-- CONTACT -->
+  <section id="contact" class="container section">
+    <h2 class="section-title">Contact</h2>
     <p>Email: <a href="mailto:satya.v.kosaraju@gmail.com">satya.v.kosaraju@gmail.com</a></p>
-    <p>LinkedIn: <a href="http://www.linkedin.com/in/satya-kosaraju" target="_blank">linkedin.com/in/satya-kosaraju</a></p>
+    <p>LinkedIn: <a href="https://linkedin.com/in/satya-kosaraju" target="_blank">linkedin.com/in/satya-kosaraju</a></p>
   </section>
 
-  <!-- Footer -->
+  <!-- FOOTER -->
   <footer>
-    <p>© 2025 Satya Venkatesh Kosaraju</p>
+    <p>© 2025 Satya Venkatesh Kosaraju • All Rights Reserved</p>
   </footer>
+
 </body>
 </html>
