@@ -1,6 +1,6 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-console.log("WEBDEM v9.0 (twin-disc + blades + carry-on-disc + smoother fan)");
+console.log("WEBDEM v1.00 (twin-disc, split feed, behind-cone throw, spacing ±0.95)");
 
 const canvas = document.getElementById("webdem-canvas");
 if (!canvas) throw new Error("Canvas #webdem-canvas not found");
@@ -18,51 +18,52 @@ let pps = ppsEl ? +ppsEl.value : 1200;
 if (rpmVal) rpmVal.textContent = rpm;
 if (ppsVal) ppsVal.textContent = pps;
 
-if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = rpm = +rpmEl.value);
-if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = pps = +ppsEl.value);
+if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
+if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
 
 // ===== Scene =====
 let renderer, scene, camera, clock;
 
-// ===== Geometry params =====
+// ===== Geometry + Setup =====
 const discY = 0.60;
 const discRadius = 0.95;
 const bladeCount = 4;
 
-// one knob for spacing
-const discSpacing = 1.70;     // 1.70 => +/-0.85
+// USER REQUEST: distance ±0.95
+const discSpacing = 1.90;     // centers at -0.95 and +0.95
 const leftX = -discSpacing / 2;
 const rightX = +discSpacing / 2;
 
-// feed
+// feed/orifice
 const feedY = discY + 0.55;
 const innerOffset = Math.min(0.48, discRadius - 0.18);
-const orificeW = 0.20;
-const orificeLen = 0.32;
+const orificeW = 0.22;        // rectangle width
+const orificeLen = 0.34;      // rectangle length
 
-// motion
-const forwardSpeed = 0.0;     // set 3.5 if you want “moving machine”
+// motion / camera
+const forwardSpeed = 3.5;     // set 0 if you want stationary machine
 let spreaderZ = 0;
 
-// camera follow (behind)
-const cameraFollow = true;
 const camHeight = 9.5;
 const camBack = 18.0;
 const camLookAhead = 3.0;
 
-// pickup window
+// pickup
 const pickupWindow = 0.18;
 
-// “fan look” tuning
-const outwardFactor = 0.55;   // wider/narrower fan
-const behindFactor = 0.18;    // pushes fan behind machine
-const bladeJitter = 0.40;     // higher = less “spokes”
+// appearance + tuning
+const outwardFactor = 0.55;
+const bladeJitter = 0.40;
 const drag = 0.012;
 
-// carry-on-disc (this is the big realism boost)
-const carryMin = 0.03;        // seconds
-const carryMax = 0.10;        // seconds
-const radialDrift = 0.65;     // outward drift while riding (m/s)
+// BIG FIX: force behind-only cone (prevents 360°)
+const enforceBehindCone = true;
+const behindConeDeg = 70; // 40 narrower, 90 wider
+
+// carry-on-disc (removes jet-lines)
+const carryMin = 0.03;
+const carryMax = 0.10;
+const radialDrift = 0.65;
 
 // ===== Particles =====
 const MAX = 70000;
@@ -73,23 +74,18 @@ const alive = new Uint8Array(MAX);
 // state: 0 falling, 2 riding disc, 1 thrown
 const state = new Uint8Array(MAX);
 
-// carry data for state==2
-const discId = new Int8Array(MAX);         // 0 left, 1 right
+// carry data (state==2)
+const discId = new Int8Array(MAX);      // 0 left, 1 right
 const carryT = new Float32Array(MAX);
 const carryDur = new Float32Array(MAX);
 const localR = new Float32Array(MAX);
 const localPhi = new Float32Array(MAX);
 
 let cursor = 0;
-
-// instancing
 let particlesMesh;
 const tmp = new THREE.Object3D();
 
-// spreader pieces
 let hopper, discL, discR, orificeMeshL, orificeMeshR, sDivider;
-
-// frame dt (used for smoothing)
 let frameDT = 0.016;
 
 // ===== Utils =====
@@ -105,10 +101,7 @@ function wrapToPi(a) {
   return a - Math.PI;
 }
 function sampleRect(cx, cz, w, l) {
-  return {
-    x: cx + (Math.random() - 0.5) * w,
-    z: cz + (Math.random() - 0.5) * l,
-  };
+  return { x: cx + (Math.random() - 0.5) * w, z: cz + (Math.random() - 0.5) * l };
 }
 function hideInstance(i) {
   tmp.position.set(1e6, 1e6, 1e6);
@@ -123,7 +116,7 @@ function setInstance(i, x, y, z) {
   particlesMesh.setMatrixAt(i, tmp.matrix);
 }
 
-// ===== Physics actions =====
+// ===== Particle transitions =====
 function spawnFalling(i, x, y, z) {
   alive[i] = 1;
   state[i] = 0;
@@ -132,10 +125,9 @@ function spawnFalling(i, x, y, z) {
   pos[i * 3 + 1] = y;
   pos[i * 3 + 2] = z;
 
-  // inherit forwardSpeed so falling aligns with moving machine
-  vel[i * 3] = 0.02 * randn();
+  vel[i * 3] = 0.03 * randn();
   vel[i * 3 + 1] = -0.25;
-  vel[i * 3 + 2] = forwardSpeed + 0.02 * randn();
+  vel[i * 3 + 2] = forwardSpeed + 0.03 * randn();
 }
 
 function beginCarry(i, whichDisc, discX, discAngle) {
@@ -152,12 +144,10 @@ function beginCarry(i, whichDisc, discX, discAngle) {
   const phiWorld = Math.atan2(dz, dx);
 
   localR[i] = Math.min(r, discRadius - 0.03);
-  localPhi[i] = wrapToPi(phiWorld - discAngle); // store relative to disc rotation
+  localPhi[i] = wrapToPi(phiWorld - discAngle);
 
-  // lock to disc plane
   pos[i * 3 + 1] = discY + 0.02;
 
-  // reset velocity while riding
   vel[i * 3] = 0;
   vel[i * 3 + 1] = 0;
   vel[i * 3 + 2] = forwardSpeed;
@@ -166,22 +156,19 @@ function beginCarry(i, whichDisc, discX, discAngle) {
 function ejectFromDisc(i, discX, discAngle, omega, meanSpeed, speedStd) {
   state[i] = 1;
 
-  // use disc angle but smear within a frame so we don’t get “same-frame streaks”
   const discAngleEff = discAngle + omega * (Math.random() - 0.5) * frameDT;
 
-  // nearest blade but allow neighbor blades sometimes (smears spokes)
   const dx = pos[i * 3] - discX;
   const dz = pos[i * 3 + 2] - spreaderZ;
   const theta = Math.atan2(dz, dx);
-  const bladeStep = (2 * Math.PI) / bladeCount;
 
+  const bladeStep = (2 * Math.PI) / bladeCount;
   const rel = wrapToPi(theta - discAngleEff);
   const k = Math.round(rel / bladeStep + randn() * 0.25);
 
   let bladeTheta = discAngleEff + k * bladeStep;
   bladeTheta += (Math.random() - 0.5) * bladeJitter;
 
-  // tangent + radial directions at blade
   const tx = -Math.sin(bladeTheta);
   const tz = Math.cos(bladeTheta);
   const ux = Math.cos(bladeTheta);
@@ -201,17 +188,30 @@ function ejectFromDisc(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const outward = discX < 0 ? -1 : +1;
   vxRel += outward * (outwardFactor * speed);
 
-  // behind the machine
-  vzRel -= behindFactor * speed;
+  // ===== FIX: force throw into a cone behind the machine (-Z) =====
+  if (enforceBehindCone) {
+    const cone = (behindConeDeg * Math.PI) / 180;
+    const mag = Math.hypot(vxRel, vzRel) + 1e-9;
 
+    // phi=0 => straight behind (-Z)
+    let phi = Math.atan2(vxRel, -vzRel);
+
+    if (phi > cone) phi = cone;
+    if (phi < -cone) phi = -cone;
+
+    vxRel = mag * Math.sin(phi);
+    vzRel = -mag * Math.cos(phi);
+  }
+
+  // assign final velocity
   vel[i * 3] = vxRel * (0.90 + 0.25 * Math.random());
-  vel[i * 3 + 1] = 1.8 + Math.random() * 0.9;
+  vel[i * 3 + 1] = 1.6 + Math.random() * 0.9;
   vel[i * 3 + 2] = vzRel * (0.90 + 0.25 * Math.random()) + forwardSpeed;
 
   pos[i * 3 + 1] = discY + 0.02;
 }
 
-// ===== Visual helpers =====
+// ===== Visual parts =====
 function addBlades(disc, color) {
   const group = new THREE.Group();
   const geo = new THREE.BoxGeometry(0.70, 0.06, 0.12);
@@ -299,6 +299,7 @@ function init() {
 
   scene.add(discL, discR);
 
+  // rectangular split orifices (inner side of each disc)
   orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
   orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
 
@@ -307,10 +308,12 @@ function init() {
 
   scene.add(orificeMeshL, orificeMeshR);
 
+  // S-divider (visual)
   sDivider = makeSDivider(0.18, 0x111827);
   sDivider.position.set(0, feedY + 0.03, 0);
   scene.add(sDivider);
 
+  // particles
   particlesMesh = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.028, 6, 6),
     new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
@@ -349,10 +352,11 @@ window.addEventListener("resize", resize);
 // ===== Loop =====
 function animate() {
   requestAnimationFrame(animate);
+
   const dt = Math.min(clock.getDelta(), 0.02);
   frameDT = dt;
 
-  // move forward (optional)
+  // move forward
   spreaderZ += forwardSpeed * dt;
 
   hopper.position.z = spreaderZ;
@@ -362,17 +366,15 @@ function animate() {
   orificeMeshR.position.z = spreaderZ;
   sDivider.position.z = spreaderZ;
 
-  if (cameraFollow) {
-    camera.position.set(0, camHeight, spreaderZ - camBack);
-    camera.lookAt(0, 1, spreaderZ + camLookAhead);
-  }
+  camera.position.set(0, camHeight, spreaderZ - camBack);
+  camera.lookAt(0, 1, spreaderZ + camLookAhead);
 
-  // disc rotation
+  // discs rotate opposite
   const omega = (rpm * 2 * Math.PI) / 60;
   discL.rotation.y += omega * dt;
   discR.rotation.y -= omega * dt;
 
-  // emit split 50/50
+  // emit 50/50 from split feed
   const emit = Math.floor(pps * dt);
   const emitLeft = Math.floor(emit / 2);
   const emitRight = emit - emitLeft;
@@ -381,19 +383,16 @@ function animate() {
   const centerR = { x: rightX - innerOffset, z: spreaderZ };
 
   for (let n = 0; n < emitLeft; n++) {
-    const i = cursor;
-    cursor = (cursor + 1) % MAX;
+    const i = cursor; cursor = (cursor + 1) % MAX;
     const p = sampleRect(centerL.x, centerL.z, orificeW, orificeLen);
     spawnFalling(i, p.x, feedY, p.z);
   }
   for (let n = 0; n < emitRight; n++) {
-    const i = cursor;
-    cursor = (cursor + 1) % MAX;
+    const i = cursor; cursor = (cursor + 1) % MAX;
     const p = sampleRect(centerR.x, centerR.z, orificeW, orificeLen);
     spawnFalling(i, p.x, feedY, p.z);
   }
 
-  // speed model
   const meanSpeed = 9 + (rpm / 1200) * 18;
   const speedStd = 0.22 * meanSpeed;
   const g = -9.81;
@@ -401,9 +400,8 @@ function animate() {
   for (let i = 0; i < MAX; i++) {
     if (!alive[i]) continue;
 
-    // ===== state machine =====
+    // riding disc
     if (state[i] === 2) {
-      // riding disc
       carryT[i] += dt;
 
       const which = discId[i];
@@ -411,16 +409,13 @@ function animate() {
       const discAngle = which === 0 ? discL.rotation.y : discR.rotation.y;
       const discOmega = which === 0 ? omega : -omega;
 
-      // drift outward while riding (more realistic)
       localR[i] = Math.min(discRadius - 0.02, localR[i] + radialDrift * dt);
-
       const phi = discAngle + localPhi[i];
 
       pos[i * 3] = discX + localR[i] * Math.cos(phi);
       pos[i * 3 + 1] = discY + 0.02;
       pos[i * 3 + 2] = spreaderZ + localR[i] * Math.sin(phi);
 
-      // eject after carry time
       if (carryT[i] >= carryDur[i]) {
         ejectFromDisc(i, discX, discAngle, discOmega, meanSpeed, speedStd);
       }
@@ -429,7 +424,7 @@ function animate() {
       continue;
     }
 
-    // falling or thrown physics
+    // falling / thrown
     vel[i * 3 + 1] += g * dt;
 
     vel[i * 3] *= (1 - drag);
@@ -440,7 +435,7 @@ function animate() {
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    // pickup window: falling hits disc → start carry
+    // pickup window: falling touches disc -> start carry
     if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
       const dxL = pos[i * 3] - leftX;
       const dzL = pos[i * 3 + 2] - spreaderZ;
