@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Web Simulation (DEM-like)</title>
+  <link rel="stylesheet" href="websim.css" />
+</head>
+
+<body>
+  <main class="page">
+    <header class="page-header">
+      <h1>Interactive Web Simulation (DEM-like)</h1>
+      <p>Browser particle animation (WebGL). Not full DEM—optimized for real-time visuals.</p>
+    </header>
+
+    <section class="sim-shell">
+      <div class="sim-frame">
+        <canvas id="webdem-canvas"></canvas>
+
+        <!-- Controls -->
+        <div class="sim-panel">
+          <div class="panel-row">
+            <div class="label">SPINNER RPM</div>
+            <div class="value" id="rpmVal">650</div>
+          </div>
+          <input id="rpm" type="range" min="0" max="1200" step="1" value="650" />
+
+          <div class="panel-row" style="margin-top:14px;">
+            <div class="label">FLOW RATE (PARTICLES/SEC)</div>
+            <div class="value" id="ppsVal">1200</div>
+          </div>
+          <input id="pps" type="range" min="0" max="3000" step="1" value="1200" />
+
+          <button id="resetSim" class="btn">Reset</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="webdem.js?v=90"></script>
+</body>
+</html>
