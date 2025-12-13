@@ -1,5 +1,7 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
+console.log("WEBDEM VERSION v3 LOADED");
+
 const canvas = document.getElementById("webdem-canvas");
 
 let renderer, scene, camera, clock;
@@ -7,11 +9,10 @@ let particlesMesh, tmpObj;
 let ground;
 let discL, discR, hopper;
 
-const MAX = 45000;
+const MAX = 50000;
 const pos = new Float32Array(MAX * 3);
 const vel = new Float32Array(MAX * 3);
 const alive = new Uint8Array(MAX);
-
 let cursor = 0;
 
 // UI
@@ -32,7 +33,12 @@ ppsEl.oninput = () => (ppsVal.textContent = pps = +ppsEl.value);
 resetBtn.onclick = () => {
   alive.fill(0);
   cursor = 0;
+  spreaderZ = 0;
 };
+
+// spreader moves forward (+Z). Particles get thrown backward (-Z).
+let spreaderZ = 0;
+const forwardSpeed = 6.0; // increase = longer visible swath
 
 function randn() {
   let u = 0, v = 0;
@@ -56,49 +62,54 @@ function init() {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
-  camera.position.set(0, 7, 14);
-  camera.lookAt(0, 1, 0);
+
+  // FIXED CAMERA (so you see a trail form)
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
+  camera.position.set(0, 10, 22);
+  camera.lookAt(0, 0.8, 8);
 
   clock = new THREE.Clock();
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x020617, 1.0));
-  const sun = new THREE.DirectionalLight(0xffffff, 1);
-  sun.position.set(6, 10, 6);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+  sun.position.set(8, 14, 6);
   scene.add(sun);
 
   // Ground
   ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60),
+    new THREE.PlaneGeometry(160, 160),
     new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.95 })
   );
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
-  // Hopper (visual only)
+  // Spreader body
   hopper = new THREE.Mesh(
-    new THREE.BoxGeometry(2.4, 1.4, 1.6),
-    new THREE.MeshStandardMaterial({ color: 0x111827 })
+    new THREE.BoxGeometry(2.8, 1.6, 2.0),
+    new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
   );
-  hopper.position.set(0, 1.6, 0);
+  hopper.position.set(0, 1.7, 0);
   scene.add(hopper);
 
-  // Twin discs
-  const discGeo = new THREE.CylinderGeometry(0.9, 0.9, 0.15, 36);
-  const discMat = new THREE.MeshStandardMaterial({ color: 0x2563eb });
+  // Twin discs (clear)
+  const discGeo = new THREE.CylinderGeometry(0.95, 0.95, 0.15, 40);
+  discL = new THREE.Mesh(
+    discGeo,
+    new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.35 })
+  );
+  discR = new THREE.Mesh(
+    discGeo,
+    new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.35 })
+  );
 
-  discL = new THREE.Mesh(discGeo, discMat);
-  discR = new THREE.Mesh(discGeo, discMat);
-
-  discL.position.set(-1.2, 0.6, 0);
-  discR.position.set(1.2, 0.6, 0);
-
+  discL.position.set(-1.35, 0.6, 0);
+  discR.position.set( 1.35, 0.6, 0);
   scene.add(discL, discR);
 
   // Particles
   particlesMesh = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.03, 6, 6),
-    new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
+    new THREE.MeshStandardMaterial({ color: 0x6bc3ff, roughness: 0.4 }),
     MAX
   );
   particlesMesh.frustumCulled = false;
@@ -117,70 +128,75 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
-
 window.addEventListener("resize", resize);
 
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.02);
 
+  // Move spreader forward
+  spreaderZ += forwardSpeed * dt;
+
+  hopper.position.z = spreaderZ;
+  discL.position.z = spreaderZ;
+  discR.position.z = spreaderZ;
+
+  // Spin discs opposite directions
   const omega = (rpm * 2 * Math.PI) / 60;
   discL.rotation.y += omega * dt;
   discR.rotation.y -= omega * dt;
 
-  // --- PARTICLE FEED BETWEEN DISCS ---
+  // Emission: drop between discs, then throw mostly backward (-Z)
   const emit = Math.floor(pps * dt);
-  const feedY = 1.05;
+  const feedY = 1.15;
+
+  // rpm affects throw speed
+  const throwSpeed = 10 + (rpm / 1200) * 18; // stronger effect
 
   for (let n = 0; n < emit; n++) {
     const i = cursor;
     cursor = (cursor + 1) % MAX;
 
-    // drop between discs
-    const x = randn() * 0.12;
-    const z = randn() * 0.12;
+    // drop between discs (in world)
+    const x = randn() * 0.10;
+    const z = spreaderZ + randn() * 0.10;
 
-    // choose which disc picks it up
-    const left = x < 0;
-    const theta = (left ? discL : discR).rotation.y;
+    const isLeft = x < 0;
+    const side = isLeft ? -1 : 1;
 
-    const dir = left ? -1 : 1;
-    const speed = 7 + rpm / 180;
-
-    const vx = dir * Math.cos(theta) * speed;
-    const vz = Math.sin(theta) * speed;
-    const vy = 2.2 + Math.random();
+    // Strong rearward bias -> swath trail
+    // x spread controls width, vz controls throw distance
+    const vx = side * (0.55 * throwSpeed) * (0.9 + 0.2 * Math.random());
+    const vz = -(1.15 * throwSpeed) * (0.9 + 0.25 * Math.random()); // ALWAYS backward
+    const vy = 2.2 + 1.2 * Math.random();
 
     spawn(i, x, feedY, z, vx, vy, vz);
   }
 
-  // --- PHYSICS ---
+  // Physics
   const g = -9.81;
-  const drag = 0.02;
+  const drag = 0.018;
 
   for (let i = 0; i < MAX; i++) {
     if (!alive[i]) continue;
 
     vel[i * 3 + 1] += g * dt;
 
-    vel[i * 3] *= 1 - drag;
-    vel[i * 3 + 1] *= 1 - drag;
-    vel[i * 3 + 2] *= 1 - drag;
+    vel[i * 3] *= (1 - drag);
+    vel[i * 3 + 1] *= (1 - drag);
+    vel[i * 3 + 2] *= (1 - drag);
 
     pos[i * 3] += vel[i * 3] * dt;
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
+    // ground hit -> stop rendering
     if (pos[i * 3 + 1] < 0.02) {
       alive[i] = 0;
       continue;
     }
 
-    tmpObj.position.set(
-      pos[i * 3],
-      pos[i * 3 + 1],
-      pos[i * 3 + 2]
-    );
+    tmpObj.position.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
     tmpObj.updateMatrix();
     particlesMesh.setMatrixAt(i, tmpObj.matrix);
   }
