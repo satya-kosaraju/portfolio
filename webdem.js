@@ -1,6 +1,6 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-console.log("WEBDEM v8.4 (camera behind + outward throw bias)");
+console.log("WEBDEM v8.5 (particles inherit forward machine speed)");
 
 const canvas = document.getElementById("webdem-canvas");
 if (!canvas) throw new Error("Canvas #webdem-canvas not found");
@@ -36,42 +36,33 @@ if (ppsVal) ppsVal.textContent = pps;
 if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = rpm = +rpmEl.value);
 if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = pps = +ppsEl.value);
 
-if (resetBtn) {
-  resetBtn.onclick = () => {
-    alive.fill(0);
-    state.fill(0);
-    cursor = 0;
-    spreaderZ = 0;
-    for (let i = 0; i < MAX; i++) hideInstance(i);
-    particlesMesh.instanceMatrix.needsUpdate = true;
-  };
-}
-
 // ================= Parameters =================
 let spreaderZ = 0;
-const forwardSpeed = 3.5; // slower looks better; increase later
 
-// camera follow (BEHIND the spreader)
+// machine speed (spreader moving forward)
+const forwardSpeed = 3.5; // try 0.0 if you want a stationary demo
+
+// camera follow (behind)
 const cameraFollow = true;
 const camHeight = 9.5;
-const camBack = 18.0;       // behind distance
-const camLookAhead = 3.0;   // look slightly ahead of discs
+const camBack = 18.0;
+const camLookAhead = 3.0;
 
 const discY = 0.60;
 const discRadius = 0.95;
-const leftX = -0.75;
-const rightX = 0.75;
+const leftX = -0.85;
+const rightX = 0.85;
 const bladeCount = 4;
 
-// Put orifice close to discs (not inside hopper)
-const feedY = discY + 0.55; // ~1.15
+// feed/orifice near discs (not inside hopper)
+const feedY = discY + 0.55;
 
-// Orifice placement: inner side mid-radius
+// inner-side mid radius
 const innerOffset = 0.45;
 const orificeW = 0.20;
 const orificeLen = 0.32;
 
-// reliable pickup window
+// pickup window
 const pickupWindow = 0.16;
 
 // ================= Helpers =================
@@ -81,13 +72,11 @@ function randn() {
   while (!v) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
-
 function wrapToPi(a) {
   a = (a + Math.PI) % (2 * Math.PI);
   if (a < 0) a += 2 * Math.PI;
   return a - Math.PI;
 }
-
 function sampleRect(cx, cz, w, l) {
   return {
     x: cx + (Math.random() - 0.5) * w,
@@ -95,13 +84,13 @@ function sampleRect(cx, cz, w, l) {
   };
 }
 
+// instanced mesh helpers
 function hideInstance(i) {
   tmp.position.set(1e6, 1e6, 1e6);
   tmp.scale.setScalar(0.001);
   tmp.updateMatrix();
   particlesMesh.setMatrixAt(i, tmp.matrix);
 }
-
 function setInstance(i, x, y, z) {
   tmp.position.set(x, y, z);
   tmp.scale.setScalar(1);
@@ -118,10 +107,10 @@ function spawnFalling(i, x, y, z) {
   pos[i * 3 + 1] = y;
   pos[i * 3 + 2] = z;
 
-  // drop mostly vertical
+  // IMPORTANT: inherit machine forward speed so particles fall "with" the spreader
   vel[i * 3] = 0.015 * randn();
   vel[i * 3 + 1] = -0.25;
-  vel[i * 3 + 2] = 0.015 * randn();
+  vel[i * 3 + 2] = forwardSpeed + 0.02 * randn();
 }
 
 function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
@@ -141,7 +130,6 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const k = Math.round(rel / bladeStep);
   const bladeTheta = discAngle + k * bladeStep;
 
-  // tangential & radial
   const tx = -Math.sin(bladeTheta);
   const tz = Math.cos(bladeTheta);
   const ux = Math.cos(bladeTheta);
@@ -153,21 +141,21 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const tangential = 1.15 * speed + 0.45 * rimSpeed;
   const radial = 0.90 * speed;
 
-  let vx = tangential * tx + radial * ux;
-  let vz = tangential * tz + radial * uz;
+  // velocities relative to spreader
+  let vxRel = tangential * tx + radial * ux;
+  let vzRel = tangential * tz + radial * uz;
 
-  // ✅ twin-disc outward bias:
-  // left disc throws to -X, right disc throws to +X
+  // outward bias (twin-disc)
   const outward = discX < 0 ? -1 : +1;
-  vx += outward * (0.55 * speed);
+  vxRel += outward * (0.55 * speed);
 
-  // swath behind machine (toward camera because camera is behind)
-  vz -= 0.18 * speed;
+  // behind the machine (relative)
+  vzRel -= 0.18 * speed;
 
-  // less "rocket" upward; more realistic
-  vel[i * 3] = vx * (0.90 + 0.20 * Math.random());
+  // convert to world velocities: add machine forward speed
+  vel[i * 3] = vxRel * (0.90 + 0.20 * Math.random());
   vel[i * 3 + 1] = 2.0 + Math.random() * 0.9;
-  vel[i * 3 + 2] = vz * (0.90 + 0.20 * Math.random());
+  vel[i * 3 + 2] = (vzRel * (0.90 + 0.20 * Math.random())) + forwardSpeed;
 
   pos[i * 3 + 1] = discY + 0.02;
 }
@@ -213,7 +201,7 @@ function makeSDivider(depth, color) {
     new THREE.MeshStandardMaterial({ color, roughness: 0.65 })
   );
   mesh.rotation.x = Math.PI / 2;
-  mesh.scale.set(1.3, 1.0, 1.0); // make it easier to see
+  mesh.scale.set(1.3, 1.0, 1.0);
   return mesh;
 }
 
@@ -242,7 +230,6 @@ function init() {
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
-  // raise hopper so orifice is below it (not inside)
   hopper = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 1.5, 2.0),
     new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
@@ -250,7 +237,6 @@ function init() {
   hopper.position.set(0, 2.35, 0);
   scene.add(hopper);
 
-  // discs
   const discGeo = new THREE.CylinderGeometry(discRadius, discRadius, 0.15, 48);
   discL = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x2563eb }));
   discR = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
@@ -263,7 +249,6 @@ function init() {
 
   scene.add(discL, discR);
 
-  // orifices
   orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
   orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
 
@@ -272,12 +257,10 @@ function init() {
 
   scene.add(orificeMeshL, orificeMeshR);
 
-  // S divider
   sDivider = makeSDivider(0.18, 0x111827);
   sDivider.position.set(0, feedY + 0.03, 0);
   scene.add(sDivider);
 
-  // particles
   particlesMesh = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.028, 6, 6),
     new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
@@ -288,6 +271,17 @@ function init() {
 
   for (let i = 0; i < MAX; i++) hideInstance(i);
   particlesMesh.instanceMatrix.needsUpdate = true;
+
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      alive.fill(0);
+      state.fill(0);
+      cursor = 0;
+      spreaderZ = 0;
+      for (let i = 0; i < MAX; i++) hideInstance(i);
+      particlesMesh.instanceMatrix.needsUpdate = true;
+    };
+  }
 
   resize();
   animate();
@@ -307,7 +301,7 @@ function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.02);
 
-  // move spreader forward in +Z
+  // move spreader forward
   spreaderZ += forwardSpeed * dt;
 
   hopper.position.z = spreaderZ;
@@ -317,7 +311,6 @@ function animate() {
   orificeMeshR.position.z = spreaderZ;
   sDivider.position.z = spreaderZ;
 
-  // camera behind, looking forward
   if (cameraFollow) {
     camera.position.set(0, camHeight, spreaderZ - camBack);
     camera.lookAt(0, 1, spreaderZ + camLookAhead);
@@ -328,7 +321,7 @@ function animate() {
   discL.rotation.y += omega * dt;
   discR.rotation.y -= omega * dt;
 
-  // emission split 50/50
+  // emit split 50/50
   const emit = Math.floor(pps * dt);
   const emitLeft = Math.floor(emit / 2);
   const emitRight = emit - emitLeft;
@@ -349,15 +342,18 @@ function animate() {
     spawnFalling(i, p.x, feedY, p.z);
   }
 
+  // speed model
   const meanSpeed = 9 + (rpm / 1200) * 18;
   const speedStd = 0.22 * meanSpeed;
 
+  // physics
   const g = -9.81;
   const drag = 0.012;
 
   for (let i = 0; i < MAX; i++) {
     if (!alive[i]) continue;
 
+    // integrate
     vel[i * 3 + 1] += g * dt;
 
     vel[i * 3] *= (1 - drag);
@@ -368,9 +364,8 @@ function animate() {
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    // pickup zone
+    // pickup zone (now particles stay aligned with discs)
     if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
-      // snap to disc plane
       pos[i * 3 + 1] = discY + 0.02;
 
       const dxL = pos[i * 3] - leftX;
