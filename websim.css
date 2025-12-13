@@ -9,19 +9,20 @@
 html,body{height:100%}
 
 body.embed{
+  position: relative;
   overflow:hidden;
   background: transparent;
   font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
 }
 
-/* canvas fills iframe */
+/* canvas fills the iframe */
 #webdem-canvas{
   width:100%;
   height:100%;
   display:block;
 }
 
-/* control panel */
+/* glass control panel */
 .sim-panel{
   position:absolute;
   left: 18px;
