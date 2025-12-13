@@ -5,9 +5,9 @@ const canvas = document.getElementById("webdem-canvas");
 let renderer, scene, camera, clock;
 let particlesMesh, tmpObj;
 let ground;
-let spinner, spreaderBody;
+let discL, discR, hopper;
 
-const MAX = 35000; // keep reasonable for GitHub Pages
+const MAX = 45000;
 const pos = new Float32Array(MAX * 3);
 const vel = new Float32Array(MAX * 3);
 const alive = new Uint8Array(MAX);
@@ -27,114 +27,78 @@ let pps = +ppsEl.value;
 rpmVal.textContent = rpm;
 ppsVal.textContent = pps;
 
-rpmEl.addEventListener("input", () => {
-  rpm = +rpmEl.value;
-  rpmVal.textContent = rpm;
-});
-
-ppsEl.addEventListener("input", () => {
-  pps = +ppsEl.value;
-  ppsVal.textContent = pps;
-});
-
-resetBtn.addEventListener("click", resetSim);
-
-function resetSim() {
+rpmEl.oninput = () => (rpmVal.textContent = rpm = +rpmEl.value);
+ppsEl.oninput = () => (ppsVal.textContent = pps = +ppsEl.value);
+resetBtn.onclick = () => {
   alive.fill(0);
   cursor = 0;
-}
+};
 
-// Quick approx normal random
 function randn() {
   let u = 0, v = 0;
-  while (u === 0) u = Math.random();
-  while (v === 0) v = Math.random();
-  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  while (!u) u = Math.random();
+  while (!v) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
 
-function spawnParticle(origin, baseSpeed, angleSpreadRad) {
-  const i = cursor;
-  cursor = (cursor + 1) % MAX;
-
+function spawn(i, x, y, z, vx, vy, vz) {
   alive[i] = 1;
-
-  // position
-  pos[i * 3 + 0] = origin.x;
-  pos[i * 3 + 1] = origin.y;
-  pos[i * 3 + 2] = origin.z;
-
-  // random launch direction in shallow cone
-  const yaw = (Math.random() * Math.PI * 2);
-  const pitch = (Math.PI / 10) + randn() * angleSpreadRad;
-  const speed = baseSpeed * (1 + 0.08 * randn());
-
-  const vx = Math.cos(yaw) * Math.cos(pitch) * speed;
-  const vy = Math.sin(pitch) * speed;
-  const vz = Math.sin(yaw) * Math.cos(pitch) * speed;
-
-  vel[i * 3 + 0] = vx;
+  pos[i * 3] = x;
+  pos[i * 3 + 1] = y;
+  pos[i * 3 + 2] = z;
+  vel[i * 3] = vx;
   vel[i * 3 + 1] = vy;
   vel[i * 3 + 2] = vz;
 }
 
 function init() {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
   scene = new THREE.Scene();
-
   camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
-  camera.position.set(0, 6.5, 13);
-  camera.lookAt(0, 1.2, 0);
+  camera.position.set(0, 7, 14);
+  camera.lookAt(0, 1, 0);
 
   clock = new THREE.Clock();
 
-  // Lights
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x0b1220, 1.0));
-
-  const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-  dir.position.set(6, 10, 6);
-  scene.add(dir);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x020617, 1.0));
+  const sun = new THREE.DirectionalLight(0xffffff, 1);
+  sun.position.set(6, 10, 6);
+  scene.add(sun);
 
   // Ground
   ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(40, 40, 1, 1),
-    new THREE.MeshStandardMaterial({
-      color: 0x0b1220,
-      roughness: 0.95,
-      metalness: 0.0,
-    })
+    new THREE.PlaneGeometry(60, 60),
+    new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.95 })
   );
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = 0;
   scene.add(ground);
 
-  // Simple spreader body (placeholder)
-  spreaderBody = new THREE.Mesh(
-    new THREE.BoxGeometry(2.2, 1.2, 2.2),
-    new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
+  // Hopper (visual only)
+  hopper = new THREE.Mesh(
+    new THREE.BoxGeometry(2.4, 1.4, 1.6),
+    new THREE.MeshStandardMaterial({ color: 0x111827 })
   );
-  spreaderBody.position.set(0, 1.1, 0);
-  scene.add(spreaderBody);
+  hopper.position.set(0, 1.6, 0);
+  scene.add(hopper);
 
-  // Spinner disk (placeholder)
-  spinner = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.0, 1.0, 0.15, 32),
-    new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.35 })
-  );
-  spinner.position.set(0, 0.55, 0);
-  scene.add(spinner);
+  // Twin discs
+  const discGeo = new THREE.CylinderGeometry(0.9, 0.9, 0.15, 36);
+  const discMat = new THREE.MeshStandardMaterial({ color: 0x2563eb });
+
+  discL = new THREE.Mesh(discGeo, discMat);
+  discR = new THREE.Mesh(discGeo, discMat);
+
+  discL.position.set(-1.2, 0.6, 0);
+  discR.position.set(1.2, 0.6, 0);
+
+  scene.add(discL, discR);
 
   // Particles
   particlesMesh = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.03, 6, 6),
-    new THREE.MeshStandardMaterial({
-      color: 0x6bc3ff,
-      roughness: 0.4,
-      metalness: 0.0,
-      transparent: true,
-      opacity: 0.95,
-    }),
+    new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
     MAX
   );
   particlesMesh.frustumCulled = false;
@@ -142,11 +106,11 @@ function init() {
 
   tmpObj = new THREE.Object3D();
 
-  onResize();
+  resize();
   animate();
 }
 
-function onResize() {
+function resize() {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   renderer.setSize(w, h, false);
@@ -154,46 +118,43 @@ function onResize() {
   camera.updateProjectionMatrix();
 }
 
-window.addEventListener("resize", onResize);
+window.addEventListener("resize", resize);
 
 function animate() {
   requestAnimationFrame(animate);
-
   const dt = Math.min(clock.getDelta(), 0.02);
 
-  // Spin
   const omega = (rpm * 2 * Math.PI) / 60;
-  spinner.rotation.y += omega * dt;
+  discL.rotation.y += omega * dt;
+  discR.rotation.y -= omega * dt;
 
-  // Emit particles from spinner edge
-  const emitCount = Math.floor(pps * dt);
-  const origin = new THREE.Vector3(0, 0.65, 0);
+  // --- PARTICLE FEED BETWEEN DISCS ---
+  const emit = Math.floor(pps * dt);
+  const feedY = 1.05;
 
-  const baseSpeed = 6 + (rpm / 1200) * 14; // ~6 to ~20 m/s
-  const angleSpread = 0.12; // radians
+  for (let n = 0; n < emit; n++) {
+    const i = cursor;
+    cursor = (cursor + 1) % MAX;
 
-  for (let k = 0; k < emitCount; k++) {
-    const r = 0.95;
-    const theta = spinner.rotation.y + Math.random() * 0.35;
+    // drop between discs
+    const x = randn() * 0.12;
+    const z = randn() * 0.12;
 
-    const x = r * Math.cos(theta);
-    const z = r * Math.sin(theta);
+    // choose which disc picks it up
+    const left = x < 0;
+    const theta = (left ? discL : discR).rotation.y;
 
-    const p0 = new THREE.Vector3(origin.x + x, origin.y, origin.z + z);
+    const dir = left ? -1 : 1;
+    const speed = 7 + rpm / 180;
 
-    spawnParticle(p0, baseSpeed, angleSpread);
+    const vx = dir * Math.cos(theta) * speed;
+    const vz = Math.sin(theta) * speed;
+    const vy = 2.2 + Math.random();
 
-    // Tangential bias (spinning disc effect)
-    const i = (cursor - 1 + MAX) % MAX;
-    const tx = -Math.sin(theta);
-    const tz = Math.cos(theta);
-
-    vel[i * 3 + 0] = tx * baseSpeed * (0.9 + 0.2 * Math.random());
-    vel[i * 3 + 2] = tz * baseSpeed * (0.9 + 0.2 * Math.random());
-    vel[i * 3 + 1] = 2.0 + 1.2 * Math.random();
+    spawn(i, x, feedY, z, vx, vy, vz);
   }
 
-  // Update particles
+  // --- PHYSICS ---
   const g = -9.81;
   const drag = 0.02;
 
@@ -202,20 +163,24 @@ function animate() {
 
     vel[i * 3 + 1] += g * dt;
 
-    vel[i * 3 + 0] *= (1 - drag);
-    vel[i * 3 + 1] *= (1 - drag);
-    vel[i * 3 + 2] *= (1 - drag);
+    vel[i * 3] *= 1 - drag;
+    vel[i * 3 + 1] *= 1 - drag;
+    vel[i * 3 + 2] *= 1 - drag;
 
-    pos[i * 3 + 0] += vel[i * 3 + 0] * dt;
+    pos[i * 3] += vel[i * 3] * dt;
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    if (pos[i * 3 + 1] <= 0.02) {
+    if (pos[i * 3 + 1] < 0.02) {
       alive[i] = 0;
       continue;
     }
 
-    tmpObj.position.set(pos[i * 3 + 0], pos[i * 3 + 1], pos[i * 3 + 2]);
+    tmpObj.position.set(
+      pos[i * 3],
+      pos[i * 3 + 1],
+      pos[i * 3 + 2]
+    );
     tmpObj.updateMatrix();
     particlesMesh.setMatrixAt(i, tmpObj.matrix);
   }
@@ -224,4 +189,4 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-document.addEventListener("DOMContentLoaded", init);
+init();
