@@ -6,6 +6,7 @@
   <title>DEM Embed</title>
   <link rel="stylesheet" href="websim.css" />
 </head>
+
 <body class="embed">
   <canvas id="webdem-canvas"></canvas>
 
@@ -24,6 +25,8 @@
 
     <button id="resetSim" class="btn">Reset</button>
   </div>
-<script type="module" src="webdem.js?v=101"></script>
+
+  <!-- IMPORTANT: bump ?v= number whenever you edit JS (cache bust) -->
+  <script type="module" src="webdem.js?v=100"></script>
 </body>
 </html>
