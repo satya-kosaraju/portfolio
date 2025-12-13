@@ -166,16 +166,26 @@ function animate() {
     const x = randn() * 0.12;
     const z = spreaderZ + randn() * 0.10;
 
-    const isLeft = x < 0;
-    const side = isLeft ? -1 : 1;
+const particleSpeed = Math.max(0.3 * meanSpeed, meanSpeed + randn() * speedStd);
 
-    // Draw particle speed from a distribution
-    const particleSpeed = Math.max(0.3 * meanSpeed, meanSpeed + randn() * speedStd);
+// Fan angle spread (radians). Increase for wider fan.
+const fan = 0.55; // ~31 degrees
 
-    // Strong rearward swath + left/right split
-    const vx = side * (0.45 * particleSpeed) * (0.9 + 0.2 * Math.random());
-    const vz = -(1.25 * particleSpeed) * (0.85 + 0.3 * Math.random()); // ALWAYS backward
-    const vy = 1.8 + Math.random() * 1.4;
+// Random angle around straight-back direction (-Z)
+const a = randn() * fan;
+
+// Split bias (small): left disc slightly prefers left, right disc prefers right
+const discBias = (x < 0) ? -0.18 : 0.18;
+const angle = a + discBias;
+
+// Convert angle into horizontal direction unit vector
+const dirx = Math.sin(angle);
+const dirz = -Math.cos(angle); // negative = backward
+
+const vx = dirx * particleSpeed;
+const vz = dirz * particleSpeed;
+const vy = 1.8 + Math.random() * 1.4;
+
 
     spawn(i, x, feedY, z, vx, vy, vz);
   }
