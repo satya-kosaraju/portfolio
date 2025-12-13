@@ -1,39 +1,38 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WEBDEM Twin-Disc</title>
+  <title>WEBDEM – Twin Disc</title>
   <link rel="stylesheet" href="webdem.css" />
 </head>
-
 <body>
-  <div class="simWrap">
-    <div class="simHeader">
-      <div class="title">Interactive Web Simulation (DEM-like)</div>
-      <div class="sub">Mouse: rotate • Wheel: zoom • Right-drag: pan</div>
-    </div>
+  <main class="webdem-wrap">
+    <header class="webdem-head">
+      <h1>Interactive Web Simulation (DEM-like)</h1>
+      <p>Mouse like EDEM: <b>Left-drag rotate</b>, <b>Right-drag pan</b>, <b>Wheel zoom</b>.</p>
+    </header>
 
-    <div class="simStage">
+    <section class="webdem-stage">
       <canvas id="webdem-canvas"></canvas>
 
       <div class="hud">
-        <div class="hudRow">
-          <div class="hudLabel">SPINNER RPM</div>
-          <div class="hudVal" id="rpmVal">650</div>
+        <div class="hud-row">
+          <div class="hud-label">SPINNER RPM</div>
+          <div class="hud-val" id="rpmVal">650</div>
         </div>
-        <input id="rpm" type="range" min="0" max="1200" value="650" />
+        <input id="rpm" type="range" min="0" max="900" value="650" />
 
-        <div class="hudRow" style="margin-top:12px;">
-          <div class="hudLabel">FLOW RATE (particles/sec)</div>
-          <div class="hudVal" id="ppsVal">1200</div>
+        <div class="hud-row" style="margin-top:12px">
+          <div class="hud-label">FLOW RATE (PARTICLES/SEC)</div>
+          <div class="hud-val" id="ppsVal">1200</div>
         </div>
-        <input id="pps" type="range" min="0" max="4000" value="1200" />
+        <input id="pps" type="range" min="0" max="3000" value="1200" />
 
-        <button id="resetSim" class="btn">Reset</button>
+        <button id="resetSim" class="hud-btn">Reset</button>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <!-- IMPORTANT: must be module -->
   <script type="module" src="webdem.js"></script>
