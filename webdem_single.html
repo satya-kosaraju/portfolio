@@ -5,16 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WEBDEM – Twin Disc</title>
 
-  <!-- ✅ Make "three" work on GitHub Pages (no bundler needed) -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
-
   <style>
     :root{
       --bg:#020817; --panel:#061026cc; --stroke:rgba(140,190,255,.35);
@@ -30,106 +20,97 @@
     }
     .wrap{max-width:1200px;margin:28px auto;padding:0 18px}
     h1{margin:0 0 6px;letter-spacing:.18em;text-transform:uppercase;font-size:20px;color:var(--muted)}
-    p{margin:0 0 14px;color:rgba(230,238,255,.7)}
+    p{margin:0 0 14px;color:rgba(230,238,255,.72)}
 
     .card{
-      border:1px solid var(--stroke);
+      position:relative;
       border-radius:22px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      border:1px solid var(--stroke);
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
       padding:18px;
     }
-
-    /* ✅ IMPORTANT: fixed height so canvas is visible */
-    .simFrame{
+    .stage{
       position:relative;
-      height:620px;
+      height:70vh;
+      min-height:520px;
       border-radius:18px;
-      border:1px solid rgba(140,190,255,.25);
+      border:1px solid rgba(140,190,255,.18);
       overflow:hidden;
-      background:radial-gradient(circle at 20% 10%, rgba(30,58,138,.25), rgba(2,8,23,.92) 60%);
+      background:radial-gradient(circle at top, rgba(75,140,255,.10), rgba(0,0,0,0) 60%);
     }
-
     canvas{
       width:100%;
       height:100%;
       display:block;
+      touch-action:none; /* important for OrbitControls */
     }
 
     .hint{
       position:absolute;
-      top:14px; left:14px;
-      font-size:12px;
-      padding:8px 10px;
-      background:rgba(2,8,23,.55);
-      border:1px solid rgba(140,190,255,.22);
+      left:16px; top:14px;
+      padding:8px 12px;
       border-radius:999px;
+      border:1px solid rgba(140,190,255,.25);
+      background:rgba(2,8,23,.55);
       color:rgba(230,238,255,.75);
-      user-select:none;
+      font-size:12px;
       pointer-events:none;
       backdrop-filter: blur(10px);
     }
 
-    .panel{
+    .hud{
       position:absolute;
       left:18px;
       bottom:18px;
-      width:280px;
-      padding:14px 14px 12px;
-      border-radius:16px;
-      background:rgba(2,8,23,.55);
+      width:290px;
+      border-radius:18px;
       border:1px solid rgba(140,190,255,.25);
-      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      background:var(--panel);
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
+      padding:14px;
       backdrop-filter: blur(14px);
     }
-    .row{display:flex;justify-content:space-between;align-items:center}
-    .label{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:rgba(159,176,214,.85)}
-    .val{font-size:12px;color:rgba(107,195,255,.95);font-weight:600}
+    .row{display:flex;align-items:center;justify-content:space-between;margin:8px 0 6px}
+    .label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(230,238,255,.65)}
+    .val{font-size:12px;color:var(--accent);font-weight:700}
     input[type="range"]{width:100%}
     .btn{
       width:100%;
       margin-top:10px;
       padding:10px 12px;
       border-radius:999px;
-      background:rgba(2,8,23,.45);
+      border:1px solid rgba(140,190,255,.28);
+      background:rgba(2,8,23,.60);
       color:var(--text);
-      border:1px solid rgba(140,190,255,.3);
       cursor:pointer;
     }
-    .btn:hover{border-color:rgba(140,190,255,.55)}
-
-    @media (max-width: 800px){
-      .simFrame{height:520px}
-      .panel{width:240px}
-    }
+    .btn:hover{filter:brightness(1.08)}
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <h1>INTERACTIVE DEM-LIKE SIMULATION</h1>
-    <p>Mouse like EDEM: <b>Left-drag</b> rotate, <b>Right-drag</b> pan, <b>Wheel</b> zoom.</p>
+    <p>Mouse like EDEM: <b>Left-drag</b> rotate, <b>Right-drag</b> pan, <b>Wheel</b> zoom (smooth + slower).</p>
 
     <div class="card">
-      <div class="simFrame">
+      <div class="stage">
         <div class="hint">Mouse: rotate • Wheel: zoom • Right-drag: pan</div>
-
         <canvas id="webdem-canvas"></canvas>
 
-        <div class="panel">
+        <div class="hud">
           <div class="row">
             <div class="label">Spinner RPM</div>
             <div class="val" id="rpmVal">650</div>
           </div>
-          <input id="rpm" type="range" min="0" max="900" value="650" />
+          <input id="rpm" type="range" min="0" max="900" value="650" step="1" />
 
-          <div style="height:10px"></div>
-
-          <div class="row">
-            <div class="label">Flow rate (particles/sec)</div>
+          <div class="row" style="margin-top:12px">
+            <div class="label">Flow Rate (particles/sec)</div>
             <div class="val" id="ppsVal">1200</div>
           </div>
-          <input id="pps" type="range" min="0" max="3000" value="1200" />
+          <input id="pps" type="range" min="0" max="3000" value="1200" step="1" />
 
           <button class="btn" id="resetSim">Reset</button>
         </div>
@@ -137,11 +118,13 @@
     </div>
   </div>
 
+  <!-- EVERYTHING BELOW IS ONE MODULE SCRIPT -->
   <script type="module">
-    import * as THREE from "three";
-    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    // Use esm.sh so OrbitControls works in browser (no "Failed to resolve module specifier 'three'")
+    import * as THREE from "https://esm.sh/three@0.160.0";
+    import { OrbitControls } from "https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
-    console.log("WEBDEM v1.10 (twin-disc)");
+    console.log("WEBDEM v1.12 (twin-disc, split feed, blades, smoother zoom)");
 
     // ===== DOM =====
     const canvas = document.getElementById("webdem-canvas");
@@ -151,29 +134,31 @@
     const ppsVal = document.getElementById("ppsVal");
     const resetBtn = document.getElementById("resetSim");
 
-    let rpm = +rpmEl.value;
-    let pps = +ppsEl.value;
+    let rpm = rpmEl ? +rpmEl.value : 650;
+    let pps = ppsEl ? +ppsEl.value : 1200;
 
-    rpmVal.textContent = rpm;
-    ppsVal.textContent = pps;
-    rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
-    ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
+    if (rpmVal) rpmVal.textContent = rpm;
+    if (ppsVal) ppsVal.textContent = pps;
+    if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
+    if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
 
     // ===== Params =====
     const discY = 0.60;
     const discRadius = 0.95;
     const bladeCount = 4;
 
-    // distance +/-0.95 => spacing 1.90
+    // distance ±0.95 => spacing 1.90
     const discSpacing = 1.90;
     const leftX = -discSpacing / 2;
     const rightX = +discSpacing / 2;
 
+    // split orifices (rectangles) above inner side of each disc
     const feedY = discY + 0.55;
     const innerOffset = Math.min(0.48, discRadius - 0.18);
     const orificeW = 0.22;
     const orificeLen = 0.34;
 
+    // tuning
     const pickupWindow = 0.12;
     const radialDrift = 0.55;
     const angFric = 2.6;
@@ -181,35 +166,39 @@
     const minSlip = 0.8;
     const releaseR = 0.86 * discRadius;
 
+    // blade physics
     const bladePitchDeg = 32;
     const throwUpDeg = 14;
     const jitterDeg = 6;
 
+    // rear-only fan (optional)
     const enforceBehind = true;
     const behindConeDeg = 55;
     const rearDeflector = true;
 
+    // drag + gravity
     const g = -9.81;
     const linDrag = 0.06;
 
+    // particles
     const MAX = 65000;
 
-    // states: 0 falling, 2 on-disc, 1 flying, 3 landed
+    // states:
+    // 0 falling, 2 on-disc, 1 flying, 3 landed
     const pos = new Float32Array(MAX * 3);
     const vel = new Float32Array(MAX * 3);
     const alive = new Uint8Array(MAX);
     const state = new Uint8Array(MAX);
 
-    const discId = new Int8Array(MAX);
+    // on-disc variables
+    const discId = new Int8Array(MAX);     // 0 left, 1 right
     const rOn = new Float32Array(MAX);
     const phiOn = new Float32Array(MAX);
     const phiDot = new Float32Array(MAX);
 
     // ===== Three.js =====
-    let renderer, scene, camera, clock;
-    let controls;                 // ✅ global (important)
-    let discL, discR, hopper;
-    let particlesMesh;
+    let renderer, scene, camera, clock, controls;
+    let discL, discR, hopper, particlesMesh, orificeMeshL, orificeMeshR, sDivider;
     const tmp = new THREE.Object3D();
     let cursor = 0;
 
@@ -248,6 +237,7 @@
       particlesMesh.instanceMatrix.needsUpdate = true;
     }
 
+    // ===== Visual parts =====
     function addBlades(disc, color) {
       const group = new THREE.Group();
       const geo = new THREE.BoxGeometry(0.70, 0.06, 0.12);
@@ -263,9 +253,36 @@
       disc.add(group);
     }
 
+    function makeOrificeMesh(w, l, thickness, color) {
+      return new THREE.Mesh(
+        new THREE.BoxGeometry(w, thickness, l),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.55 })
+      );
+    }
+
+    function makeSDivider(depth, color) {
+      const shape = new THREE.Shape();
+      shape.moveTo(-0.14, -0.22);
+      shape.bezierCurveTo(0.14, -0.22, 0.14, -0.06, 0.00, 0.00);
+      shape.bezierCurveTo(-0.14, 0.06, -0.14, 0.22, 0.14, 0.22);
+
+      const extrude = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps: 1 });
+      extrude.translate(0, 0, -depth / 2);
+
+      const mesh = new THREE.Mesh(
+        extrude,
+        new THREE.MeshStandardMaterial({ color, roughness: 0.65 })
+      );
+      mesh.rotation.x = Math.PI / 2;
+      mesh.scale.set(1.3, 1.0, 1.0);
+      return mesh;
+    }
+
+    // ===== Spawn/Transitions =====
     function spawnFalling(i, x, y, z) {
       alive[i] = 1;
       state[i] = 0;
+
       pos[i * 3] = x;
       pos[i * 3 + 1] = y;
       pos[i * 3 + 2] = z;
@@ -285,6 +302,7 @@
       rOn[i] = Math.min(Math.max(0.15, Math.hypot(dx, dz)), discRadius - 0.03);
       phiOn[i] = Math.atan2(dz, dx);
 
+      // start with slip (slower than disc), ramp up via angFric
       phiDot[i] = omegaDisc * 0.25;
 
       pos[i * 3 + 1] = discY + 0.02;
@@ -297,11 +315,15 @@
       const cone = (coneDeg * Math.PI) / 180;
       const mag = Math.hypot(vx, vz) + 1e-9;
 
+      // phi=0 => straight behind (-Z)
       let phi = Math.atan2(vx, -vz);
       if (phi > cone) phi = cone;
       if (phi < -cone) phi = -cone;
 
-      return { vx: mag * Math.sin(phi), vz: -mag * Math.cos(phi) };
+      return {
+        vx: mag * Math.sin(phi),
+        vz: -mag * Math.cos(phi),
+      };
     }
 
     function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
@@ -350,6 +372,7 @@
       pos[i * 3 + 1] = discY + 0.03;
     }
 
+    // ===== Init =====
     function init() {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -361,16 +384,45 @@
       camera.position.set(0, 9.0, -17.0);
       camera.lookAt(0, 1, 0);
 
+      // OrbitControls (EDEM-like)
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
       controls.enablePan = true;
-      controls.zoomSpeed = 0.10;
       controls.panSpeed = 0.8;
-      controls.minDistance = 3;
-      controls.maxDistance = 80;
+      controls.minDistance = 6;
+      controls.maxDistance = 60;
       controls.maxPolarAngle = Math.PI * 0.49;
       controls.target.set(0, 1.0, 0);
+
+      // IMPORTANT: disable built-in zoom (too fast on trackpads), use custom wheel zoom
+      controls.enableZoom = false;
+
+      // EDEM-ish mouse mapping
+      controls.mouseButtons = {
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.ROTATE,
+        RIGHT: THREE.MOUSE.PAN
+      };
+
+      // Custom smooth + slow wheel zoom
+      const ZOOM_SENS = 0.00045; // smaller = slower (try 0.0003 if still fast)
+      renderer.domElement.addEventListener("wheel", (e) => {
+        e.preventDefault();
+
+        const scale = Math.exp(e.deltaY * ZOOM_SENS);
+
+        const offset = camera.position.clone().sub(controls.target).multiplyScalar(scale);
+        let dist = offset.length();
+
+        // clamp to min/max distance
+        dist = Math.max(controls.minDistance, Math.min(controls.maxDistance, dist));
+        offset.setLength(dist);
+
+        camera.position.copy(controls.target).add(offset);
+        controls.update();
+      }, { passive: false });
+
       controls.update();
 
       scene.add(new THREE.HemisphereLight(0xffffff, 0x020617, 1.0));
@@ -401,6 +453,18 @@
       addBlades(discR, 0x7dd3fc);
       scene.add(discL, discR);
 
+      // rectangular split orifices (inner side)
+      orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
+      orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
+      orificeMeshL.position.set(leftX + innerOffset, feedY, 0);
+      orificeMeshR.position.set(rightX - innerOffset, feedY, 0);
+      scene.add(orificeMeshL, orificeMeshR);
+
+      // S divider (visual)
+      sDivider = makeSDivider(0.18, 0x111827);
+      sDivider.position.set(0, feedY + 0.03, 0);
+      scene.add(sDivider);
+
       particlesMesh = new THREE.InstancedMesh(
         new THREE.SphereGeometry(0.028, 6, 6),
         new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
@@ -411,7 +475,7 @@
       for (let i = 0; i < MAX; i++) hideInstance(i);
       particlesMesh.instanceMatrix.needsUpdate = true;
 
-      resetBtn.onclick = resetSim;
+      if (resetBtn) resetBtn.onclick = resetSim;
 
       resize();
       animate();
@@ -427,16 +491,20 @@
     }
     window.addEventListener("resize", resize);
 
+    // ===== Loop =====
     function animate() {
       requestAnimationFrame(animate);
 
       // auto-resize
-      const pxW = Math.floor(canvas.clientWidth * renderer.getPixelRatio());
-      const pxH = Math.floor(canvas.clientHeight * renderer.getPixelRatio());
-      if (canvas.width !== pxW || canvas.height !== pxH) resize();
+      const pr = renderer.getPixelRatio();
+      if (canvas.width !== Math.floor(canvas.clientWidth * pr) ||
+          canvas.height !== Math.floor(canvas.clientHeight * pr)) {
+        resize();
+      }
 
       const dt = Math.min(clock.getDelta(), 0.02);
 
+      // disc ω (opposite rotation)
       const omega = (rpm * 2 * Math.PI) / 60;
       const omegaL = +omega;
       const omegaR = -omega;
@@ -444,21 +512,22 @@
       discL.rotation.y += omegaL * dt;
       discR.rotation.y += omegaR * dt;
 
+      // emit 50/50
       const emit = Math.floor(pps * dt);
       const emitLeft = Math.floor(emit / 2);
       const emitRight = emit - emitLeft;
 
-      const centerLx = leftX + innerOffset;
-      const centerRx = rightX - innerOffset;
+      const centerL = { x: leftX + innerOffset, z: 0 };
+      const centerR = { x: rightX - innerOffset, z: 0 };
 
       for (let n = 0; n < emitLeft; n++) {
         const i = cursor; cursor = (cursor + 1) % MAX;
-        const p = sampleRect(centerLx, 0, orificeW, orificeLen);
+        const p = sampleRect(centerL.x, centerL.z, orificeW, orificeLen);
         spawnFalling(i, p.x, feedY, p.z);
       }
       for (let n = 0; n < emitRight; n++) {
         const i = cursor; cursor = (cursor + 1) % MAX;
-        const p = sampleRect(centerRx, 0, orificeW, orificeLen);
+        const p = sampleRect(centerR.x, centerR.z, orificeW, orificeLen);
         spawnFalling(i, p.x, feedY, p.z);
       }
 
@@ -467,11 +536,13 @@
       for (let i = 0; i < MAX; i++) {
         if (!alive[i]) continue;
 
+        // LANDED
         if (state[i] === 3) {
           setInstance(i, pos[i * 3], 0.02, pos[i * 3 + 2]);
           continue;
         }
 
+        // ON DISC
         if (state[i] === 2) {
           const which = discId[i];
           const discX = which === 0 ? leftX : rightX;
@@ -480,6 +551,7 @@
 
           phiDot[i] += (omegaDisc - phiDot[i]) * (angFric * dt);
           phiOn[i] += phiDot[i] * dt;
+
           rOn[i] = Math.min(discRadius - 0.02, rOn[i] + radialDrift * dt);
 
           pos[i * 3] = discX + rOn[i] * Math.cos(phiOn[i]);
@@ -501,7 +573,7 @@
           continue;
         }
 
-        // falling/flying integrate
+        // FALLING / FLYING
         vel[i * 3 + 1] += g * dt;
 
         const damp = Math.exp(-linDrag * dt);
@@ -513,20 +585,29 @@
         pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
         pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
+        // pickup: falling touches disc -> on-disc
         if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
           const dxL = pos[i * 3] - leftX;
           const dzL = pos[i * 3 + 2];
           const dxR = pos[i * 3] - rightX;
           const dzR = pos[i * 3 + 2];
 
-          if (Math.hypot(dxL, dzL) <= discRadius) beginOnDisc(i, 0, leftX, discL.rotation.y, omegaL);
-          else if (Math.hypot(dxR, dzR) <= discRadius) beginOnDisc(i, 1, rightX, discR.rotation.y, omegaR);
+          if (Math.hypot(dxL, dzL) <= discRadius) {
+            beginOnDisc(i, 0, leftX, discL.rotation.y, omegaL);
+          } else if (Math.hypot(dxR, dzR) <= discRadius) {
+            beginOnDisc(i, 1, rightX, discR.rotation.y, omegaR);
+          }
         }
 
+        // ground contact
         if (pos[i * 3 + 1] <= 0.02) {
           pos[i * 3 + 1] = 0.02;
-          vel[i * 3] = 0; vel[i * 3 + 1] = 0; vel[i * 3 + 2] = 0;
+          vel[i * 3] = 0;
+          vel[i * 3 + 1] = 0;
+          vel[i * 3 + 2] = 0;
           state[i] = 3;
+          setInstance(i, pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+          continue;
         }
 
         if (state[i] === 0 && pos[i * 3 + 1] < discY - 0.05) state[i] = 1;
