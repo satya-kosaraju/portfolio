@@ -21,8 +21,25 @@ body{
 }
 
 .page{
-  padding: 36px min(7vw, 90px);
+  padding: 0;
 }
+.page-header{
+  display: none;
+}
+.sim-shell{
+  border-radius: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.sim-frame{
+  min-height: 560px;
+}
+#webdem-canvas{
+  height: 560px;
+}
+
 
 .page-header h1{
   font-size: 22px;
