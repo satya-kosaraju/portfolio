@@ -260,9 +260,23 @@ function animate() {
     const i = cursor;
     cursor = (cursor + 1) % MAX;
 
-    const x = randn() * feedSpread;                  // between discs
-    const z = spreaderZ + randn() * feedSpread;      // near orifice
-    spawnFalling(i, x, feedY, z);
+// Randomly choose which disc gets the particle
+const toLeft = Math.random() < 0.5;
+
+// Drop point relative to disc center (inner half of disc)
+const discX = toLeft ? leftX : rightX;
+
+// Radius where particle lands on disc (inner-to-mid radius)
+const r = 0.35 + 0.45 * Math.random(); // meters
+const phi = Math.random() * 2 * Math.PI;
+
+// Convert to world coordinates
+const x = discX + r * Math.cos(phi);
+const z = spreaderZ + r * Math.sin(phi);
+
+// Spawn falling just above disc
+spawnFalling(i, x, feedY, z);
+
   }
 
   // Physics update
