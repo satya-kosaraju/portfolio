@@ -364,11 +364,8 @@
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
-      
-      // ✅ slower zoom
-      controls.enableZoom = true;
-      controls.zoomSpeed = 0.25;     // try 0.15 to 0.6 (smaller = slower)
       controls.enablePan = true;
+      controls.zoomSpeed = 0.25;
       controls.panSpeed = 0.8;
       controls.minDistance = 3;
       controls.maxDistance = 80;
