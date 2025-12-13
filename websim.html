@@ -1,43 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Web Simulation (DEM-like)</title>
+  <title>DEM Embed</title>
   <link rel="stylesheet" href="websim.css" />
 </head>
+<body class="embed">
+  <canvas id="webdem-canvas"></canvas>
 
-<body>
-  <main class="page">
-    <header class="page-header">
-      <h1>Interactive Web Simulation (DEM-like)</h1>
-      <p>Browser particle animation (WebGL). Not full DEM—optimized for real-time visuals.</p>
-    </header>
+  <div class="sim-panel">
+    <div class="panel-row">
+      <div class="label">SPINNER RPM</div>
+      <div class="value" id="rpmVal">650</div>
+    </div>
+    <input id="rpm" type="range" min="0" max="1200" step="1" value="650" />
 
-    <section class="sim-shell">
-      <div class="sim-frame">
-        <canvas id="webdem-canvas"></canvas>
+    <div class="panel-row" style="margin-top:14px;">
+      <div class="label">FLOW RATE (PARTICLES/SEC)</div>
+      <div class="value" id="ppsVal">1200</div>
+    </div>
+    <input id="pps" type="range" min="0" max="3000" step="1" value="1200" />
 
-        <!-- Controls -->
-        <div class="sim-panel">
-          <div class="panel-row">
-            <div class="label">SPINNER RPM</div>
-            <div class="value" id="rpmVal">650</div>
-          </div>
-          <input id="rpm" type="range" min="0" max="1200" step="1" value="650" />
+    <button id="resetSim" class="btn">Reset</button>
+  </div>
 
-          <div class="panel-row" style="margin-top:14px;">
-            <div class="label">FLOW RATE (PARTICLES/SEC)</div>
-            <div class="value" id="ppsVal">1200</div>
-          </div>
-          <input id="pps" type="range" min="0" max="3000" step="1" value="1200" />
-
-          <button id="resetSim" class="btn">Reset</button>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <script type="module" src="webdem.js?v=90"></script>
+  <script type="module" src="webdem.js?v=91"></script>
 </body>
 </html>
