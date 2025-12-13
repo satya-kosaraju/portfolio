@@ -1,19 +1,18 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-console.log("WEBDEM VERSION v8.2 LOADED (rect orifices + S divider + reliable pickup)");
+console.log("WEBDEM v8.3 (camera follow + hide dead instanced particles)");
 
 const canvas = document.getElementById("webdem-canvas");
-if (!canvas) throw new Error("Canvas #webdem-canvas not found. Check index.html.");
+if (!canvas) throw new Error("Canvas #webdem-canvas not found");
 
-// Scene
+// ================= Scene =================
 let renderer, scene, camera, clock;
-
-// Objects
 let ground, hopper, discL, discR;
 let orificeMeshL, orificeMeshR, sDivider;
-let particlesMesh, tmpObj;
+let particlesMesh;
+const tmp = new THREE.Object3D();
 
-// ================= Particle arrays =================
+// ================= Particle storage =================
 const MAX = 70000;
 const pos = new Float32Array(MAX * 3);
 const vel = new Float32Array(MAX * 3);
@@ -44,48 +43,51 @@ if (resetBtn) {
     state.fill(0);
     cursor = 0;
     spreaderZ = 0;
+    // hide all instances immediately
+    for (let i = 0; i < MAX; i++) hideInstance(i);
+    particlesMesh.instanceMatrix.needsUpdate = true;
   };
 }
 
-// ================= Geometry / physics =================
+// ================= Parameters =================
 let spreaderZ = 0;
-const forwardSpeed = 5.5; // set 0.0 if you want to test in place
+
+// keep it moving, but camera will follow
+const forwardSpeed = 5.5;
+
+// camera follow (keeps spreader always visible)
+const cameraFollow = true;
+const camHeight = 10;
+const camBack = 18;     // distance behind lookAt
+const camLookAhead = 2; // look slightly ahead of spreader center
 
 const discY = 0.60;
 const discRadius = 0.95;
-
-const leftX = -0.95;
-const rightX = 0.95;
-
+const leftX = -0.75;
+const rightX = 0.75;
 const bladeCount = 4;
 
-// Orifice height
+// Orifice placement
 const feedY = 1.35;
-
-// Orifices placed on inner side, mid-radius
 const innerOffset = 0.45;
+const orificeW = 0.18;
+const orificeLen = 0.30;
 
-// Rectangle dimensions (meters)
-const orificeW = 0.18;     // across stream
-const orificeLen = 0.30;   // along stream
+// contact window (prevents “skipping” disc plane)
+const pickupWindow = 0.10;
 
-// Reliable pickup window (IMPORTANT)
-const pickupWindow = 0.08; // meters above disc plane (prevents skipping)
-
-// ================= Utilities =================
+// ================= Helpers =================
 function randn() {
   let u = 0, v = 0;
   while (!u) u = Math.random();
   while (!v) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
-
 function wrapToPi(a) {
   a = (a + Math.PI) % (2 * Math.PI);
   if (a < 0) a += 2 * Math.PI;
   return a - Math.PI;
 }
-
 function sampleRect(cx, cz, w, l) {
   return {
     x: cx + (Math.random() - 0.5) * w,
@@ -93,7 +95,22 @@ function sampleRect(cx, cz, w, l) {
   };
 }
 
-// ================= Particle spawn =================
+// ✅ IMPORTANT: hide dead instances so they don’t leave “frozen columns”
+function hideInstance(i) {
+  tmp.position.set(1e6, 1e6, 1e6);
+  tmp.scale.setScalar(0.001);
+  tmp.updateMatrix();
+  particlesMesh.setMatrixAt(i, tmp.matrix);
+}
+
+function setInstance(i, x, y, z) {
+  tmp.position.set(x, y, z);
+  tmp.scale.setScalar(1);
+  tmp.updateMatrix();
+  particlesMesh.setMatrixAt(i, tmp.matrix);
+}
+
+// ================= Particle behavior =================
 function spawnFalling(i, x, y, z) {
   alive[i] = 1;
   state[i] = 0;
@@ -102,13 +119,11 @@ function spawnFalling(i, x, y, z) {
   pos[i * 3 + 1] = y;
   pos[i * 3 + 2] = z;
 
-  // mostly vertical drop from orifice
   vel[i * 3] = 0.02 * randn();
   vel[i * 3 + 1] = -0.15;
   vel[i * 3 + 2] = 0.02 * randn();
 }
 
-// ================= Blade pickup =================
 function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   state[i] = 1;
 
@@ -126,7 +141,6 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const k = Math.round(rel / bladeStep);
   const bladeTheta = discAngle + k * bladeStep;
 
-  // tangential & radial
   const tx = -Math.sin(bladeTheta);
   const tz = Math.cos(bladeTheta);
 
@@ -136,15 +150,14 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const speed = Math.max(3.0, meanSpeed + randn() * speedStd);
   const rimSpeed = Math.abs(omega) * r;
 
-  // throw strength
-  const tangential = 1.20 * speed + 0.35 * rimSpeed;
-  const radial = 0.85 * speed;
+  const tangential = 1.25 * speed + 0.40 * rimSpeed;
+  const radial = 0.90 * speed;
 
   let vx = tangential * tx + radial * ux;
   let vz = tangential * tz + radial * uz;
 
-  // mild rearward bias (swath behind travel direction)
-  vz -= 0.20 * speed;
+  // swath behind the machine
+  vz -= 0.22 * speed;
 
   vx *= 0.90 + 0.20 * Math.random();
   vz *= 0.90 + 0.20 * Math.random();
@@ -156,7 +169,7 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   pos[i * 3 + 1] = discY + 0.02;
 }
 
-// ================= Visual blades =================
+// ================= Visual parts =================
 function addBlades(disc, color) {
   const group = new THREE.Group();
   const geo = new THREE.BoxGeometry(0.7, 0.06, 0.12);
@@ -172,11 +185,11 @@ function addBlades(disc, color) {
   disc.add(group);
 }
 
-// ================= Visual: orifice + S divider =================
 function makeOrificeMesh(w, l, thickness, color) {
-  const geo = new THREE.BoxGeometry(w, thickness, l);
-  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.65 });
-  return new THREE.Mesh(geo, mat);
+  return new THREE.Mesh(
+    new THREE.BoxGeometry(w, thickness, l),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.65 })
+  );
 }
 
 function makeSDivider(depth, color) {
@@ -192,9 +205,10 @@ function makeSDivider(depth, color) {
   });
   extrude.translate(0, 0, -depth / 2);
 
-  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
-  const mesh = new THREE.Mesh(extrude, mat);
-
+  const mesh = new THREE.Mesh(
+    extrude,
+    new THREE.MeshStandardMaterial({ color, roughness: 0.7 })
+  );
   mesh.rotation.x = Math.PI / 2;
   return mesh;
 }
@@ -206,9 +220,9 @@ function init() {
 
   scene = new THREE.Scene();
 
-  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
-  camera.position.set(0, 10, 22);
-  camera.lookAt(0, 1, 8);
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 800);
+  camera.position.set(0, camHeight, camBack);
+  camera.lookAt(0, 1, 0);
 
   clock = new THREE.Clock();
 
@@ -218,7 +232,7 @@ function init() {
   scene.add(sun);
 
   ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(240, 240),
+    new THREE.PlaneGeometry(260, 260),
     new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.95 })
   );
   ground.rotation.x = -Math.PI / 2;
@@ -231,7 +245,6 @@ function init() {
   hopper.position.set(0, 1.9, 0);
   scene.add(hopper);
 
-  // discs
   const discGeo = new THREE.CylinderGeometry(discRadius, discRadius, 0.15, 48);
   discL = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x2563eb }));
   discR = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
@@ -244,21 +257,19 @@ function init() {
 
   scene.add(discL, discR);
 
-  // orifices
   orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0b1220);
   orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0b1220);
 
+  // inner side at mid radius
   orificeMeshL.position.set(leftX + innerOffset, feedY, 0);
   orificeMeshR.position.set(rightX - innerOffset, feedY, 0);
 
   scene.add(orificeMeshL, orificeMeshR);
 
-  // S divider
   sDivider = makeSDivider(0.16, 0x111827);
   sDivider.position.set(0, feedY + 0.02, 0);
   scene.add(sDivider);
 
-  // particles
   particlesMesh = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.028, 6, 6),
     new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
@@ -267,13 +278,14 @@ function init() {
   particlesMesh.frustumCulled = false;
   scene.add(particlesMesh);
 
-  tmpObj = new THREE.Object3D();
+  // hide all instances initially (prevents origin blob)
+  for (let i = 0; i < MAX; i++) hideInstance(i);
+  particlesMesh.instanceMatrix.needsUpdate = true;
 
   resize();
   animate();
 }
 
-// ================= Resize =================
 function resize() {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
@@ -290,24 +302,26 @@ function animate() {
 
   // move forward
   spreaderZ += forwardSpeed * dt;
+
   hopper.position.z = spreaderZ;
   discL.position.z = spreaderZ;
   discR.position.z = spreaderZ;
-
   orificeMeshL.position.z = spreaderZ;
   orificeMeshR.position.z = spreaderZ;
   sDivider.position.z = spreaderZ;
 
-  // disc rotation
+  // camera follow so the spreader never disappears
+  if (cameraFollow) {
+    camera.position.set(0, camHeight, spreaderZ + camBack);
+    camera.lookAt(0, 1, spreaderZ + camLookAhead);
+  }
+
+  // rotate discs
   const omega = (rpm * 2 * Math.PI) / 60;
   discL.rotation.y += omega * dt;
   discR.rotation.y -= omega * dt;
 
-  // variable speed model
-  const meanSpeed = 9 + (rpm / 1200) * 18;
-  const speedStd = 0.22 * meanSpeed;
-
-  // emission split 50/50 from two rectangular orifices
+  // emission split 50/50
   const emit = Math.floor(pps * dt);
   const emitLeft = Math.floor(emit / 2);
   const emitRight = emit - emitLeft;
@@ -321,7 +335,6 @@ function animate() {
     const p = sampleRect(centerL.x, centerL.z, orificeW, orificeLen);
     spawnFalling(i, p.x, feedY, p.z);
   }
-
   for (let n = 0; n < emitRight; n++) {
     const i = cursor;
     cursor = (cursor + 1) % MAX;
@@ -329,29 +342,29 @@ function animate() {
     spawnFalling(i, p.x, feedY, p.z);
   }
 
-  // physics
+  // speed model
+  const meanSpeed = 9 + (rpm / 1200) * 18;
+  const speedStd = 0.22 * meanSpeed;
+
   const g = -9.81;
   const drag = 0.012;
 
   for (let i = 0; i < MAX; i++) {
     if (!alive[i]) continue;
 
-    // gravity
+    // integrate
     vel[i * 3 + 1] += g * dt;
 
-    // drag
     vel[i * 3] *= (1 - drag);
     vel[i * 3 + 1] *= (1 - drag);
     vel[i * 3 + 2] *= (1 - drag);
 
-    // integrate
     pos[i * 3] += vel[i * 3] * dt;
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    // ✅ reliable disc pickup (bigger window + snap)
+    // reliable pickup
     if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
-      // snap to disc plane so we never "skip" the contact
       pos[i * 3 + 1] = discY + 0.02;
 
       const dxL = pos[i * 3] - leftX;
@@ -366,16 +379,15 @@ function animate() {
       }
     }
 
-    // ground hit -> despawn
+    // ground hit -> despawn + HIDE instance
     if (pos[i * 3 + 1] < 0.02) {
       alive[i] = 0;
+      hideInstance(i);
       continue;
     }
 
-    // render instance
-    tmpObj.position.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
-    tmpObj.updateMatrix();
-    particlesMesh.setMatrixAt(i, tmpObj.matrix);
+    // render
+    setInstance(i, pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
   }
 
   particlesMesh.instanceMatrix.needsUpdate = true;
