@@ -56,8 +56,8 @@ const discY = 0.60;
 const discRadius = 0.95;
 
 // ✅ discs closer now (reduced gap)
-const leftX = -0.85;
-const rightX = 0.85;
+const leftX = -0.95;
+const rightX = 0.95;
 
 const bladeCount = 4;
 
