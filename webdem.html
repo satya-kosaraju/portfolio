@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>WEBDEM Twin Disc</title>
+  <style>
+    :root{
+      --bg:#020817;
+      --panel:rgba(3,7,18,.72);
+      --border:rgba(151,218,255,.35);
+      --text:#e5ecff;
+      --muted:#8b9bbd;
+      --accent:#6bc3ff;
+      --radius:18px;
+    }
+    html,body{height:100%;margin:0;background:transparent;overflow:hidden;}
+    #sim-wrap{
+      position:relative;
+      width:100%;
+      height:100%;
+      border-radius: 18px;
+      overflow:hidden;
+      background: radial-gradient(circle at top, #0b1633 0, #020817 60%);
+    }
+    canvas{width:100%;height:100%;display:block;}
+    .panel{
+      position:absolute;
+      left:22px;
+      bottom:22px;
+      width:300px;
+      padding:16px 16px 14px;
+      border-radius: 16px;
+      background: var(--panel);
+      border: 1px solid rgba(151,218,255,.25);
+      box-shadow: 0 18px 45px rgba(0,0,0,.55);
+      backdrop-filter: blur(14px);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .row{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 8px;}
+    .lbl{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+    .val{font-size:.82rem;color:var(--accent);font-weight:600;}
+    input[type="range"]{width:100%;}
+    .btn{
+      width:100%;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(151,218,255,.35);
+      background: rgba(2,6,23,.75);
+      color: var(--text);
+      cursor:pointer;
+    }
+    .hint{
+      position:absolute;
+      top:14px;
+      left:14px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color:rgba(229,236,255,.75);
+      font-size:.85rem;
+      padding:8px 10px;
+      border-radius: 12px;
+      background: rgba(3,7,18,.35);
+      border: 1px solid rgba(151,218,255,.18);
+      backdrop-filter: blur(10px);
+    }
+  </style>
+</head>
+<body>
+  <div id="sim-wrap">
+    <div class="hint">Mouse: rotate • Wheel: zoom • Right-drag: pan</div>
+
+    <canvas id="webdem-canvas"></canvas>
+
+    <div class="panel">
+      <div class="row">
+        <div class="lbl">Spinner RPM</div>
+        <div class="val" id="rpmVal">650</div>
+      </div>
+      <input id="rpm" type="range" min="0" max="1200" value="650" />
+
+      <div class="row" style="margin-top:12px;">
+        <div class="lbl">Flow rate (particles/sec)</div>
+        <div class="val" id="ppsVal">1200</div>
+      </div>
+      <input id="pps" type="range" min="0" max="3500" value="1200" />
+
+      <button class="btn" id="resetSim">Reset</button>
+    </div>
+  </div>
+
+  <script type="module" src="./webdem.js"></script>
+</body>
+</html>
