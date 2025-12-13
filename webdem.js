@@ -1,23 +1,7 @@
-import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
-console.log("WEBDEM v1.11 (OrbitControls fixed)");
-
-// ===== DOM =====
-const canvas = document.getElementById("webdem-canvas");
-const rpmEl = document.getElementById("rpm");
-const ppsEl = document.getElementById("pps");
-const rpmVal = document.getElementById("rpmVal");
-const ppsVal = document.getElementById("ppsVal");
-const resetBtn = document.getElementById("resetSim");
-
-let rpm = rpmEl ? +rpmEl.value : 650;
-let pps = ppsEl ? +ppsEl.value : 1200;
-
-if (rpmVal) rpmVal.textContent = rpm;
-if (ppsVal) ppsVal.textContent = pps;
-if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
-if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
+console.log("WEBDEM v1.12 (safe DOM + OrbitControls)");
 
 // ===== Params =====
 const discY = 0.60;
@@ -29,7 +13,6 @@ const discSpacing = 1.90;
 const leftX = -discSpacing / 2;
 const rightX = +discSpacing / 2;
 
-// split orifices (rectangles) above inner side of each disc
 const feedY = discY + 0.55;
 const innerOffset = Math.min(0.48, discRadius - 0.18);
 const orificeW = 0.22;
@@ -60,26 +43,25 @@ const linDrag = 0.06;
 // particles
 const MAX = 65000;
 
-// states:
-// 0 falling
-// 2 on-disc
-// 1 flying
-// 3 landed
+// states: 0 falling, 2 on-disc, 1 flying, 3 landed
 const pos = new Float32Array(MAX * 3);
 const vel = new Float32Array(MAX * 3);
 const alive = new Uint8Array(MAX);
 const state = new Uint8Array(MAX);
 
-// on-disc variables
 const discId = new Int8Array(MAX);
 const rOn = new Float32Array(MAX);
 const phiOn = new Float32Array(MAX);
 const phiDot = new Float32Array(MAX);
 
+// ===== DOM (assigned in init) =====
+let canvas, rpmEl, ppsEl, rpmVal, ppsVal, resetBtn;
+let rpm = 650;
+let pps = 1200;
+
 // ===== Three.js =====
 let renderer, scene, camera, clock, controls;
-let discL, discR, hopper, orificeMeshL, orificeMeshR, sDivider;
-let particlesMesh;
+let discL, discR, hopper, orificeMeshL, orificeMeshR, sDivider, particlesMesh;
 
 const tmp = new THREE.Object3D();
 let cursor = 0;
@@ -90,28 +72,21 @@ function wrapToPi(a) {
   if (a < 0) a += 2 * Math.PI;
   return a - Math.PI;
 }
-
 function randn() {
   let u = 0, v = 0;
   while (!u) u = Math.random();
   while (!v) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
-
 function sampleRect(cx, cz, w, l) {
-  return {
-    x: cx + (Math.random() - 0.5) * w,
-    z: cz + (Math.random() - 0.5) * l
-  };
+  return { x: cx + (Math.random() - 0.5) * w, z: cz + (Math.random() - 0.5) * l };
 }
-
 function hideInstance(i) {
   tmp.position.set(1e6, 1e6, 1e6);
   tmp.scale.setScalar(0.001);
   tmp.updateMatrix();
   particlesMesh.setMatrixAt(i, tmp.matrix);
 }
-
 function setInstance(i, x, y, z) {
   tmp.position.set(x, y, z);
   tmp.scale.setScalar(1);
@@ -127,7 +102,7 @@ function resetSim() {
   particlesMesh.instanceMatrix.needsUpdate = true;
 }
 
-// ===== visuals =====
+// ===== Visual parts =====
 function addBlades(disc, color) {
   const group = new THREE.Group();
   const geo = new THREE.BoxGeometry(0.70, 0.06, 0.12);
@@ -142,37 +117,28 @@ function addBlades(disc, color) {
   }
   disc.add(group);
 }
-
 function makeOrificeMesh(w, l, thickness, color) {
   return new THREE.Mesh(
     new THREE.BoxGeometry(w, thickness, l),
     new THREE.MeshStandardMaterial({ color, roughness: 0.55 })
   );
 }
-
 function makeSDivider(depth, color) {
   const shape = new THREE.Shape();
   shape.moveTo(-0.14, -0.22);
   shape.bezierCurveTo(0.14, -0.22, 0.14, -0.06, 0.00, 0.00);
   shape.bezierCurveTo(-0.14, 0.06, -0.14, 0.22, 0.14, 0.22);
 
-  const extrude = new THREE.ExtrudeGeometry(shape, {
-    depth,
-    bevelEnabled: false,
-    steps: 1
-  });
+  const extrude = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps: 1 });
   extrude.translate(0, 0, -depth / 2);
 
-  const mesh = new THREE.Mesh(
-    extrude,
-    new THREE.MeshStandardMaterial({ color, roughness: 0.65 })
-  );
+  const mesh = new THREE.Mesh(extrude, new THREE.MeshStandardMaterial({ color, roughness: 0.65 }));
   mesh.rotation.x = Math.PI / 2;
   mesh.scale.set(1.3, 1.0, 1.0);
   return mesh;
 }
 
-// ===== spawn & transitions =====
+// ===== Spawn/Transitions =====
 function spawnFalling(i, x, y, z) {
   alive[i] = 1;
   state[i] = 0;
@@ -195,29 +161,21 @@ function beginOnDisc(i, whichDisc, discX, omegaDisc) {
 
   rOn[i] = Math.min(Math.max(0.15, Math.hypot(dx, dz)), discRadius - 0.03);
   phiOn[i] = Math.atan2(dz, dx);
-
-  // slip start
   phiDot[i] = omegaDisc * 0.25;
 
   pos[i * 3 + 1] = discY + 0.02;
-  vel[i * 3] = 0;
-  vel[i * 3 + 1] = 0;
-  vel[i * 3 + 2] = 0;
+  vel[i * 3] = 0; vel[i * 3 + 1] = 0; vel[i * 3 + 2] = 0;
 }
 
 function clampBehindCone(vx, vz, coneDeg) {
   const cone = (coneDeg * Math.PI) / 180;
   const mag = Math.hypot(vx, vz) + 1e-9;
 
-  // phi=0 => straight behind (-Z)
   let phi = Math.atan2(vx, -vz);
   if (phi > cone) phi = cone;
   if (phi < -cone) phi = -cone;
 
-  return {
-    vx: mag * Math.sin(phi),
-    vz: -mag * Math.cos(phi),
-  };
+  return { vx: mag * Math.sin(phi), vz: -mag * Math.cos(phi) };
 }
 
 function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
@@ -226,16 +184,13 @@ function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
   const jitter = (jitterDeg * Math.PI / 180) * (Math.random() - 0.5);
   const bladeTheta = discAngle + bladeRel + jitter;
 
-  // radial unit
   const ux = Math.cos(bladeTheta);
   const uz = Math.sin(bladeTheta);
 
-  // tangent depends on spin
   const sgn = omegaDisc >= 0 ? 1 : -1;
   const tx = sgn * (-Math.sin(bladeTheta));
   const tz = sgn * ( Math.cos(bladeTheta));
 
-  // blade pitch mixes tangent & radial
   const pitch = bladePitchDeg * Math.PI / 180;
   let dirx = tx * Math.cos(pitch) + ux * Math.sin(pitch);
   let dirz = tz * Math.cos(pitch) + uz * Math.sin(pitch);
@@ -249,7 +204,6 @@ function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
   let vx = dirx * kick;
   let vz = dirz * kick;
 
-  // outward bias (left throws left, right throws right)
   const outward = discX < 0 ? -1 : +1;
   vx += outward * (0.18 * kick);
 
@@ -270,94 +224,7 @@ function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
   pos[i * 3 + 1] = discY + 0.03;
 }
 
-// ===== init =====
-function init() {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-
-  scene = new THREE.Scene();
-  clock = new THREE.Clock();
-
-  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
-  camera.position.set(0, 9.0, -17.0);
-
-  // OrbitControls (EDEM-like view controls)
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.enablePan = true;
-  controls.panSpeed = 0.8;
-  controls.minDistance = 3;
-  controls.maxDistance = 80;
-  controls.maxPolarAngle = Math.PI * 0.49; // prevents going below ground
-  controls.target.set(0, 1.0, 0);          // look-at point
-  controls.update();
-
-  // optional: avoid right-click menu while panning
-  renderer.domElement.addEventListener("contextmenu", (e) => e.preventDefault());
-
-  // lights
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x020617, 1.0));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.0);
-  sun.position.set(8, 14, 6);
-  scene.add(sun);
-
-  // ground
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(300, 300),
-    new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.95 })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  scene.add(ground);
-
-  // hopper block
-  hopper = new THREE.Mesh(
-    new THREE.BoxGeometry(2.4, 1.5, 2.0),
-    new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
-  );
-  hopper.position.set(0, 2.35, 0);
-  scene.add(hopper);
-
-  // discs
-  const discGeo = new THREE.CylinderGeometry(discRadius, discRadius, 0.15, 48);
-  discL = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x2563eb }));
-  discR = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
-  discL.position.set(leftX, discY, 0);
-  discR.position.set(rightX, discY, 0);
-  addBlades(discL, 0x93c5fd);
-  addBlades(discR, 0x7dd3fc);
-  scene.add(discL, discR);
-
-  // orifices
-  orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
-  orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
-  orificeMeshL.position.set(leftX + innerOffset, feedY, 0);
-  orificeMeshR.position.set(rightX - innerOffset, feedY, 0);
-  scene.add(orificeMeshL, orificeMeshR);
-
-  // S divider
-  sDivider = makeSDivider(0.18, 0x111827);
-  sDivider.position.set(0, feedY + 0.03, 0);
-  scene.add(sDivider);
-
-  // particles
-  particlesMesh = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.028, 6, 6),
-    new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
-    MAX
-  );
-  particlesMesh.frustumCulled = false;
-  scene.add(particlesMesh);
-
-  for (let i = 0; i < MAX; i++) hideInstance(i);
-  particlesMesh.instanceMatrix.needsUpdate = true;
-
-  if (resetBtn) resetBtn.onclick = resetSim;
-
-  resize();
-  animate();
-}
-
+// ===== init / resize / loop =====
 function resize() {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
@@ -368,23 +235,16 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 
-window.addEventListener("resize", resize);
-
-// ===== loop =====
 function animate() {
   requestAnimationFrame(animate);
 
-  // auto-resize
   if (
     canvas.width !== Math.floor(canvas.clientWidth * renderer.getPixelRatio()) ||
     canvas.height !== Math.floor(canvas.clientHeight * renderer.getPixelRatio())
-  ) {
-    resize();
-  }
+  ) resize();
 
   const dt = Math.min(clock.getDelta(), 0.02);
 
-  // disc omega
   const omega = (rpm * 2 * Math.PI) / 60;
   const omegaL = +omega;
   const omegaR = -omega;
@@ -392,7 +252,6 @@ function animate() {
   discL.rotation.y += omegaL * dt;
   discR.rotation.y += omegaR * dt;
 
-  // emit
   const emit = Math.floor(pps * dt);
   const emitLeft = Math.floor(emit / 2);
   const emitRight = emit - emitLeft;
@@ -416,13 +275,11 @@ function animate() {
   for (let i = 0; i < MAX; i++) {
     if (!alive[i]) continue;
 
-    // landed: keep
     if (state[i] === 3) {
       setInstance(i, pos[i * 3], 0.02, pos[i * 3 + 2]);
       continue;
     }
 
-    // on-disc
     if (state[i] === 2) {
       const which = discId[i];
       const discX = which === 0 ? leftX : rightX;
@@ -431,7 +288,6 @@ function animate() {
 
       phiDot[i] += (omegaDisc - phiDot[i]) * (angFric * dt);
       phiOn[i] += phiDot[i] * dt;
-
       rOn[i] = Math.min(discRadius - 0.02, rOn[i] + radialDrift * dt);
 
       pos[i * 3] = discX + rOn[i] * Math.cos(phiOn[i]);
@@ -444,10 +300,7 @@ function animate() {
       const diff = wrapToPi(phiRel - bladeRel);
       const slip = Math.abs(omegaDisc - phiDot[i]);
 
-      if (
-        (Math.abs(diff) < bladeHitTol && slip > minSlip && rOn[i] > 0.22) ||
-        rOn[i] > releaseR
-      ) {
+      if ((Math.abs(diff) < bladeHitTol && slip > minSlip && rOn[i] > 0.22) || rOn[i] > releaseR) {
         eject(i, discX, discAngle, omegaDisc, rOn[i], bladeRel);
       }
 
@@ -455,7 +308,7 @@ function animate() {
       continue;
     }
 
-    // falling / flying
+    // falling/flying
     vel[i * 3 + 1] += g * dt;
 
     const damp = Math.exp(-linDrag * dt);
@@ -467,26 +320,19 @@ function animate() {
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    // pickup
     if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
       const dxL = pos[i * 3] - leftX;
       const dzL = pos[i * 3 + 2];
       const dxR = pos[i * 3] - rightX;
       const dzR = pos[i * 3 + 2];
 
-      if (Math.hypot(dxL, dzL) <= discRadius) {
-        beginOnDisc(i, 0, leftX, omegaL);
-      } else if (Math.hypot(dxR, dzR) <= discRadius) {
-        beginOnDisc(i, 1, rightX, omegaR);
-      }
+      if (Math.hypot(dxL, dzL) <= discRadius) beginOnDisc(i, 0, leftX, omegaL);
+      else if (Math.hypot(dxR, dzR) <= discRadius) beginOnDisc(i, 1, rightX, omegaR);
     }
 
-    // ground land
     if (pos[i * 3 + 1] <= 0.02) {
       pos[i * 3 + 1] = 0.02;
-      vel[i * 3] = 0;
-      vel[i * 3 + 1] = 0;
-      vel[i * 3 + 2] = 0;
+      vel[i * 3] = 0; vel[i * 3 + 1] = 0; vel[i * 3 + 2] = 0;
       state[i] = 3;
       setInstance(i, pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
       continue;
@@ -498,11 +344,107 @@ function animate() {
   }
 
   particlesMesh.instanceMatrix.needsUpdate = true;
-
-  // IMPORTANT: OrbitControls updates here
   if (controls) controls.update();
-
   renderer.render(scene, camera);
+}
+
+function init() {
+  // DOM now exists (because script is at end of body)
+  canvas = document.getElementById("webdem-canvas");
+  rpmEl = document.getElementById("rpm");
+  ppsEl = document.getElementById("pps");
+  rpmVal = document.getElementById("rpmVal");
+  ppsVal = document.getElementById("ppsVal");
+  resetBtn = document.getElementById("resetSim");
+
+  if (!canvas) {
+    console.error("Canvas not found: #webdem-canvas");
+    return;
+  }
+
+  rpm = rpmEl ? +rpmEl.value : rpm;
+  pps = ppsEl ? +ppsEl.value : pps;
+
+  if (rpmVal) rpmVal.textContent = rpm;
+  if (ppsVal) ppsVal.textContent = pps;
+  if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
+  if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
+  if (resetBtn) resetBtn.onclick = resetSim;
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+  scene = new THREE.Scene();
+  clock = new THREE.Clock();
+
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
+  camera.position.set(0, 9.0, -17.0);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.enablePan = true;
+  controls.panSpeed = 0.8;
+  controls.minDistance = 3;
+  controls.maxDistance = 80;
+  controls.maxPolarAngle = Math.PI * 0.49;
+  controls.target.set(0, 1.0, 0);
+  controls.update();
+
+  renderer.domElement.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x020617, 1.0));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+  sun.position.set(8, 14, 6);
+  scene.add(sun);
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(300, 300),
+    new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.95 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  scene.add(ground);
+
+  hopper = new THREE.Mesh(
+    new THREE.BoxGeometry(2.4, 1.5, 2.0),
+    new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
+  );
+  hopper.position.set(0, 2.35, 0);
+  scene.add(hopper);
+
+  const discGeo = new THREE.CylinderGeometry(discRadius, discRadius, 0.15, 48);
+  discL = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x2563eb }));
+  discR = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+  discL.position.set(leftX, discY, 0);
+  discR.position.set(rightX, discY, 0);
+  addBlades(discL, 0x93c5fd);
+  addBlades(discR, 0x7dd3fc);
+  scene.add(discL, discR);
+
+  orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
+  orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
+  orificeMeshL.position.set(leftX + innerOffset, feedY, 0);
+  orificeMeshR.position.set(rightX - innerOffset, feedY, 0);
+  scene.add(orificeMeshL, orificeMeshR);
+
+  sDivider = makeSDivider(0.18, 0x111827);
+  sDivider.position.set(0, feedY + 0.03, 0);
+  scene.add(sDivider);
+
+  particlesMesh = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.028, 6, 6),
+    new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
+    MAX
+  );
+  particlesMesh.frustumCulled = false;
+  scene.add(particlesMesh);
+
+  for (let i = 0; i < MAX; i++) hideInstance(i);
+  particlesMesh.instanceMatrix.needsUpdate = true;
+
+  resize();
+  window.addEventListener("resize", resize);
+  animate();
 }
 
 init();
