@@ -37,7 +37,6 @@
         <li><a href="#projects">Projects</a></li>
         <li><a href="#skills">Skills</a></li>
         <li><a href="#contact">Contact</a></li>
-        <!-- CV button moved here -->
         <li>
           <a href="Satya_resume.pdf" class="btn-nav" target="_blank">
             Download CV
@@ -181,9 +180,7 @@
   <section id="dem" class="section section-dark">
     <div class="section-header" data-aos="fade-up">
       <h2>DEM Simulation Workflow</h2>
-      <p>
-        From physical fertilizer to calibrated, validated DEM model.
-      </p>
+      <p>From physical fertilizer to calibrated, validated DEM model.</p>
     </div>
 
     <!-- engineering-looking grid background -->
@@ -225,7 +222,7 @@
     </div>
   </section>
 
-  <!-- DEM Video -->
+  <!-- DEM Video + Web Simulation -->
   <section class="section">
     <div class="section-header" data-aos="fade-up">
       <h2>Fertilizer Spreader DEM Animation</h2>
@@ -240,6 +237,34 @@
           frameborder="0"
           allowfullscreen
         ></iframe>
+      </div>
+    </div>
+
+    <!-- Web DEM-like Simulation -->
+    <div class="webdem-shell" data-aos="zoom-in">
+      <div class="webdem-header">
+        <h3>Interactive Web Simulation (DEM-like)</h3>
+        <p>Browser particle animation (WebGL). Not full DEM—optimized for real-time visuals.</p>
+      </div>
+
+      <div class="webdem-frame">
+        <canvas id="webdem-canvas"></canvas>
+
+        <div class="webdem-ui">
+          <label>
+            Spinner RPM
+            <input id="rpm" type="range" min="200" max="1200" value="650" />
+            <span id="rpmVal">650</span>
+          </label>
+
+          <label>
+            Flow rate (particles/sec)
+            <input id="pps" type="range" min="200" max="3000" value="1200" />
+            <span id="ppsVal">1200</span>
+          </label>
+
+          <button id="resetSim" class="webdem-btn">Reset</button>
+        </div>
       </div>
     </div>
   </section>
@@ -370,5 +395,8 @@
       }, 600);
     });
   </script>
+
+  <!-- WebGL DEM-like Simulation -->
+  <script type="module" src="webdem.js"></script>
 </body>
 </html>
