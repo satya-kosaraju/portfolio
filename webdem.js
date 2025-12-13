@@ -1,6 +1,6 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-console.log("WEBDEM VERSION v3 LOADED");
+console.log("WEBDEM VERSION v4 LOADED");
 
 const canvas = document.getElementById("webdem-canvas");
 
@@ -36,9 +36,9 @@ resetBtn.onclick = () => {
   spreaderZ = 0;
 };
 
-// spreader moves forward (+Z). Particles get thrown backward (-Z).
+// Spreader moves forward (+Z); particles thrown backward (-Z) => swath
 let spreaderZ = 0;
-const forwardSpeed = 6.0; // increase = longer visible swath
+const forwardSpeed = 6.0; // m/s visual speed
 
 function randn() {
   let u = 0, v = 0;
@@ -63,7 +63,7 @@ function init() {
 
   scene = new THREE.Scene();
 
-  // FIXED CAMERA (so you see a trail form)
+  // Fixed camera so you SEE the swath trail
   camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
   camera.position.set(0, 10, 22);
   camera.lookAt(0, 0.8, 8);
@@ -91,7 +91,7 @@ function init() {
   hopper.position.set(0, 1.7, 0);
   scene.add(hopper);
 
-  // Twin discs (clear)
+  // Twin discs
   const discGeo = new THREE.CylinderGeometry(0.95, 0.95, 0.15, 40);
   discL = new THREE.Mesh(
     discGeo,
@@ -104,6 +104,7 @@ function init() {
 
   discL.position.set(-1.35, 0.6, 0);
   discR.position.set( 1.35, 0.6, 0);
+
   scene.add(discL, discR);
 
   // Particles
@@ -146,29 +147,35 @@ function animate() {
   discL.rotation.y += omega * dt;
   discR.rotation.y -= omega * dt;
 
-  // Emission: drop between discs, then throw mostly backward (-Z)
+  // --- VARIABLE SPEED MODEL ---
+  // Mean throw speed based on RPM
+  const meanSpeed = 10 + (rpm / 1200) * 18;
+
+  // Speed variability (represents particle size + vane pickup variability)
+  const speedStd = 0.25 * meanSpeed; // 25% variation
+
+  // Emit particles dropping between discs
   const emit = Math.floor(pps * dt);
   const feedY = 1.15;
-
-  // rpm affects throw speed
-  const throwSpeed = 10 + (rpm / 1200) * 18; // stronger effect
 
   for (let n = 0; n < emit; n++) {
     const i = cursor;
     cursor = (cursor + 1) % MAX;
 
-    // drop between discs (in world)
-    const x = randn() * 0.10;
+    // Drop between discs (world coords)
+    const x = randn() * 0.12;
     const z = spreaderZ + randn() * 0.10;
 
     const isLeft = x < 0;
     const side = isLeft ? -1 : 1;
 
-    // Strong rearward bias -> swath trail
-    // x spread controls width, vz controls throw distance
-    const vx = side * (0.55 * throwSpeed) * (0.9 + 0.2 * Math.random());
-    const vz = -(1.15 * throwSpeed) * (0.9 + 0.25 * Math.random()); // ALWAYS backward
-    const vy = 2.2 + 1.2 * Math.random();
+    // Draw particle speed from a distribution
+    const particleSpeed = Math.max(0.3 * meanSpeed, meanSpeed + randn() * speedStd);
+
+    // Strong rearward swath + left/right split
+    const vx = side * (0.45 * particleSpeed) * (0.9 + 0.2 * Math.random());
+    const vz = -(1.25 * particleSpeed) * (0.85 + 0.3 * Math.random()); // ALWAYS backward
+    const vy = 1.8 + Math.random() * 1.4;
 
     spawn(i, x, feedY, z, vx, vy, vz);
   }
@@ -190,7 +197,7 @@ function animate() {
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    // ground hit -> stop rendering
+    // Ground hit -> despawn
     if (pos[i * 3 + 1] < 0.02) {
       alive[i] = 0;
       continue;
