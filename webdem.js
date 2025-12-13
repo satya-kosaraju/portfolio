@@ -1,13 +1,19 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-console.log("WEBDEM VERSION v8 LOADED (rect orifices + S divider)");
+console.log("WEBDEM VERSION v8.1 LOADED (rect orifices + S divider)");
 
+// --- Grab canvas safely ---
 const canvas = document.getElementById("webdem-canvas");
+if (!canvas) {
+  throw new Error("Canvas #webdem-canvas not found. Check index.html id.");
+}
 
 let renderer, scene, camera, clock;
 let particlesMesh, tmpObj;
 let ground, hopper, discL, discR;
-let orificeL, orificeR, sDivider;
+
+// ✅ Renamed meshes to avoid name collisions
+let orificeMeshL, orificeMeshR, sDivider;
 
 // ================= Particle arrays =================
 const MAX = 70000;
@@ -25,21 +31,23 @@ const rpmVal = document.getElementById("rpmVal");
 const ppsVal = document.getElementById("ppsVal");
 const resetBtn = document.getElementById("resetSim");
 
-let rpm = +rpmEl.value;
-let pps = +ppsEl.value;
+let rpm = rpmEl ? +rpmEl.value : 650;
+let pps = ppsEl ? +ppsEl.value : 1200;
 
-rpmVal.textContent = rpm;
-ppsVal.textContent = pps;
+if (rpmVal) rpmVal.textContent = rpm;
+if (ppsVal) ppsVal.textContent = pps;
 
-rpmEl.oninput = () => (rpmVal.textContent = rpm = +rpmEl.value);
-ppsEl.oninput = () => (ppsVal.textContent = pps = +ppsEl.value);
+if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = rpm = +rpmEl.value);
+if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = pps = +ppsEl.value);
 
-resetBtn.onclick = () => {
-  alive.fill(0);
-  state.fill(0);
-  cursor = 0;
-  spreaderZ = 0;
-};
+if (resetBtn) {
+  resetBtn.onclick = () => {
+    alive.fill(0);
+    state.fill(0);
+    cursor = 0;
+    spreaderZ = 0;
+  };
+}
 
 // ================= Geometry / physics =================
 let spreaderZ = 0;
@@ -54,18 +62,16 @@ const rightX = 0.75;
 
 const bladeCount = 4;
 
-// Feed/orifice height (just above discs)
+// Feed/orifice height
 const feedY = 1.35;
 
-// Where the orifice sits on each disc:
-// "inner side of the system" = toward center gap (x -> 0)
-// and "center of the radius" ~ mid-radius
-const rCenter = 0.45; // mid radius
-const innerOffset = rCenter; // radial offset magnitude toward center gap
+// Orifice placement: inner side at mid-radius
+const rCenter = 0.45;
+const innerOffset = rCenter;
 
-// Rectangular orifice size (in meters, in X-Z plane)
-const orificeW = 0.18; // width (across flow)
-const orificeL = 0.30; // length (along flow)
+// ✅ Orifice rectangle dimensions (renamed to avoid collision)
+const orificeW = 0.18;     // width (X)
+const orificeLen = 0.30;   // length (Z)
 
 // ================= Utilities =================
 function randn() {
@@ -81,12 +87,12 @@ function wrapToPi(a) {
   return a - Math.PI;
 }
 
-// Sample uniformly from a rectangle centered at (cx, cz)
-// rectangle axes aligned with world X and Z (simple + stable)
+// Sample uniformly from rectangle centered at (cx, cz)
 function sampleRect(cx, cz, w, l) {
-  const x = cx + (Math.random() - 0.5) * w;
-  const z = cz + (Math.random() - 0.5) * l;
-  return { x, z };
+  return {
+    x: cx + (Math.random() - 0.5) * w,
+    z: cz + (Math.random() - 0.5) * l
+  };
 }
 
 // ================= Particles =================
@@ -98,13 +104,12 @@ function spawnFalling(i, x, y, z) {
   pos[i * 3 + 1] = y;
   pos[i * 3 + 2] = z;
 
-  // falling mostly vertical (orifice drop)
   vel[i * 3] = 0.02 * randn();
   vel[i * 3 + 1] = -0.15;
   vel[i * 3 + 2] = 0.02 * randn();
 }
 
-// Blade pickup physics: nearest of 4 blades gives tangential + radial kick
+// Blade pickup physics
 function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   state[i] = 1;
 
@@ -122,7 +127,6 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const k = Math.round(rel / bladeStep);
   const bladeTheta = discAngle + k * bladeStep;
 
-  // Tangential and radial unit vectors at bladeTheta
   const tx = -Math.sin(bladeTheta);
   const tz = Math.cos(bladeTheta);
 
@@ -130,20 +134,17 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const uz = Math.sin(bladeTheta);
 
   const speed = Math.max(3.0, meanSpeed + randn() * speedStd);
-
   const rimSpeed = Math.abs(omega) * r;
 
-  // Stronger, more realistic throw
   const tangential = 1.20 * speed + 0.35 * rimSpeed;
   const radial = 0.85 * speed;
 
   let vx = tangential * tx + radial * ux;
   let vz = tangential * tz + radial * uz;
 
-  // Mild rearward bias so you get a swath behind travel direction
+  // mild rearward bias
   vz -= 0.20 * speed;
 
-  // stochastic spread
   vx *= 0.90 + 0.20 * Math.random();
   vz *= 0.90 + 0.20 * Math.random();
 
@@ -151,7 +152,6 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   vel[i * 3 + 1] = 3.2 + Math.random() * 1.2;
   vel[i * 3 + 2] = vz;
 
-  // snap to disc plane
   pos[i * 3 + 1] = discY + 0.02;
 }
 
@@ -178,28 +178,25 @@ function makeOrificeMesh(w, l, thickness, color) {
   return new THREE.Mesh(geo, mat);
 }
 
-function makeSDivider(thickness, height, depth, color) {
-  // Simple S-ish plate using an extruded shape (visual only)
+function makeSDivider(depth, color) {
+  // Simple S-ish shape (visual only)
   const shape = new THREE.Shape();
   shape.moveTo(-0.12, -0.20);
   shape.bezierCurveTo(0.12, -0.20, 0.12, -0.05, 0.00, 0.00);
   shape.bezierCurveTo(-0.12, 0.05, -0.12, 0.20, 0.12, 0.20);
 
   const extrude = new THREE.ExtrudeGeometry(shape, {
-    depth: depth,
+    depth,
     bevelEnabled: false,
     steps: 1,
   });
-
-  // scale in Y to desired height
   extrude.translate(0, 0, -depth / 2);
 
   const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.65 });
   const mesh = new THREE.Mesh(extrude, mat);
 
-  // Make it stand vertically (shape is in XY, extruded in Z)
-  mesh.scale.set(1, height, 1);
-  mesh.rotation.x = Math.PI / 2; // stand it up
+  // stand it vertically
+  mesh.rotation.x = Math.PI / 2;
   return mesh;
 }
 
@@ -248,19 +245,18 @@ function init() {
 
   scene.add(discL, discR);
 
-  // Rectangular orifices (visual)
-  orificeL = makeOrificeMesh(orificeW, orificeL, 0.05, 0x0b1220);
-  orificeR = makeOrificeMesh(orificeW, orificeL, 0.05, 0x0b1220);
+  // Orifice meshes (visual)
+  orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0b1220);
+  orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0b1220);
 
-  // Place them "inner side" at mid-radius:
-  // left disc inner side points toward +X; right disc inner side toward -X
-  orificeL.position.set(leftX + innerOffset, feedY, 0);
-  orificeR.position.set(rightX - innerOffset, feedY, 0);
+  // inner side at mid-radius
+  orificeMeshL.position.set(leftX + innerOffset, feedY, 0);
+  orificeMeshR.position.set(rightX - innerOffset, feedY, 0);
 
-  scene.add(orificeL, orificeR);
+  scene.add(orificeMeshL, orificeMeshR);
 
-  // S-divider between orifices (visual)
-  sDivider = makeSDivider(0.03, 1.0, 0.16, 0x111827);
+  // S divider between them
+  sDivider = makeSDivider(0.16, 0x111827);
   sDivider.position.set(0, feedY + 0.02, 0);
   scene.add(sDivider);
 
@@ -300,9 +296,9 @@ function animate() {
   discL.position.z = spreaderZ;
   discR.position.z = spreaderZ;
 
-  // update orifice + divider Z position with spreader
-  orificeL.position.z = spreaderZ;
-  orificeR.position.z = spreaderZ;
+  // move orifices + divider with spreader
+  orificeMeshL.position.z = spreaderZ;
+  orificeMeshR.position.z = spreaderZ;
   sDivider.position.z = spreaderZ;
 
   // rotate discs
@@ -314,26 +310,25 @@ function animate() {
   const meanSpeed = 9 + (rpm / 1200) * 18;
   const speedStd = 0.22 * meanSpeed;
 
-  // Emit particles equally from both rectangular orifices
+  // Emit equally from both rectangular orifices
   const emit = Math.floor(pps * dt);
-  const emitL = Math.floor(emit / 2);
-  const emitR = emit - emitL;
+  const emitLeft = Math.floor(emit / 2);
+  const emitRight = emit - emitLeft;
 
-  // centers of each orifice (dynamic Z)
   const centerL = { x: leftX + innerOffset, z: spreaderZ };
   const centerR = { x: rightX - innerOffset, z: spreaderZ };
 
-  for (let n = 0; n < emitL; n++) {
+  for (let n = 0; n < emitLeft; n++) {
     const i = cursor;
     cursor = (cursor + 1) % MAX;
-    const p = sampleRect(centerL.x, centerL.z, orificeW, orificeL);
+    const p = sampleRect(centerL.x, centerL.z, orificeW, orificeLen);
     spawnFalling(i, p.x, feedY, p.z);
   }
 
-  for (let n = 0; n < emitR; n++) {
+  for (let n = 0; n < emitRight; n++) {
     const i = cursor;
     cursor = (cursor + 1) % MAX;
-    const p = sampleRect(centerR.x, centerR.z, orificeW, orificeL);
+    const p = sampleRect(centerR.x, centerR.z, orificeW, orificeLen);
     spawnFalling(i, p.x, feedY, p.z);
   }
 
@@ -354,7 +349,7 @@ function animate() {
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    // when falling reaches disc plane, check which disc it lands on and kick
+    // disc contact -> blade kick
     if (state[i] === 0 && pos[i * 3 + 1] <= discY + 0.01) {
       const dxL = pos[i * 3] - leftX;
       const dzL = pos[i * 3 + 2] - spreaderZ;
@@ -374,6 +369,7 @@ function animate() {
       continue;
     }
 
+    // render
     tmpObj.position.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
     tmpObj.updateMatrix();
     particlesMesh.setMatrixAt(i, tmpObj.matrix);
