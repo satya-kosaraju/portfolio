@@ -185,32 +185,19 @@
     </div>
 
     <!-- Web DEM-like Simulation -->
-    <div class="webdem-shell" data-aos="zoom-in">
-      <div class="webdem-header">
-        <h3>Interactive Web Simulation (DEM-like)</h3>
-        <p>Browser particle animation (WebGL). Not full DEM—optimized for real-time visuals.</p>
-      </div>
+    <section class="section">
+  <div class="section-header" data-aos="fade-up">
+    <h2>Interactive DEM-like Web Simulation</h2>
+    <p>Twin-disc visualization with controllable RPM and flow rate.</p>
+  </div>
 
-      <div class="webdem-frame">
-        <canvas id="webdem-canvas"></canvas>
-
-        <div class="webdem-ui">
-          <label>
-            Spinner RPM
-            <input id="rpm" type="range" min="200" max="1200" value="650" />
-            <span id="rpmVal">650</span>
-          </label>
-
-          <label>
-            Flow rate (particles/sec)
-            <input id="pps" type="range" min="200" max="3000" value="1200" />
-            <span id="ppsVal">1200</span>
-          </label>
-
-          <button id="resetSim" class="webdem-btn">Reset</button>
-        </div>
-      </div>
+  <div class="video-shell" data-aos="zoom-in">
+    <div class="video-frame">
+      <iframe src="websim.html" style="width:100%; aspect-ratio: 16/9; border:0;"></iframe>
     </div>
+  </div>
+</section>
+
   </section>
 
   <!-- Skills -->
