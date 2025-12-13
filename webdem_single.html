@@ -4,6 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WEBDEM – Twin Disc</title>
+
+  <!-- ✅ Make "three" work on GitHub Pages (no bundler needed) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
   <style>
     :root{
       --bg:#020817; --panel:#061026cc; --stroke:rgba(140,190,255,.35);
@@ -20,143 +31,337 @@
     .wrap{max-width:1200px;margin:28px auto;padding:0 18px}
     h1{margin:0 0 6px;letter-spacing:.18em;text-transform:uppercase;font-size:20px;color:var(--muted)}
     p{margin:0 0 14px;color:rgba(230,238,255,.7)}
-    .stage{
-      position:relative;
-      height:min(78vh,720px);
-      border-radius:26px;
+
+    .card{
       border:1px solid var(--stroke);
-      box-shadow:0 30px 80px rgba(0,0,0,.55);
-      overflow:hidden;
-      background:radial-gradient(circle at top, rgba(9,20,60,.7), rgba(2,8,23,.95));
+      border-radius:22px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      padding:18px;
     }
-    canvas{width:100%;height:100%;display:block}
-    .hud{
-      position:absolute; left:18px; bottom:18px; width:320px;
-      padding:16px; border-radius:18px;
-      background:linear-gradient(135deg, rgba(10,18,50,.9), rgba(2,8,23,.75));
+
+    /* ✅ IMPORTANT: fixed height so canvas is visible */
+    .simFrame{
+      position:relative;
+      height:620px;
+      border-radius:18px;
       border:1px solid rgba(140,190,255,.25);
-      backdrop-filter:blur(10px);
+      overflow:hidden;
+      background:radial-gradient(circle at 20% 10%, rgba(30,58,138,.25), rgba(2,8,23,.92) 60%);
+    }
+
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    .hint{
+      position:absolute;
+      top:14px; left:14px;
+      font-size:12px;
+      padding:8px 10px;
+      background:rgba(2,8,23,.55);
+      border:1px solid rgba(140,190,255,.22);
+      border-radius:999px;
+      color:rgba(230,238,255,.75);
       user-select:none;
+      pointer-events:none;
+      backdrop-filter: blur(10px);
     }
-    .row{display:flex;justify-content:space-between;align-items:baseline}
-    .lab{font-size:12px;letter-spacing:.18em;color:rgba(230,238,255,.6)}
-    .val{font-size:12px;color:var(--accent);font-weight:600}
-    input[type="range"]{width:100%;margin:10px 0 0}
-    button{
-      margin-top:14px;width:100%;padding:10px 12px;border-radius:999px;
-      border:1px solid rgba(140,190,255,.35);
-      background:rgba(2,8,23,.75);color:var(--text);cursor:pointer;
+
+    .panel{
+      position:absolute;
+      left:18px;
+      bottom:18px;
+      width:280px;
+      padding:14px 14px 12px;
+      border-radius:16px;
+      background:rgba(2,8,23,.55);
+      border:1px solid rgba(140,190,255,.25);
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      backdrop-filter: blur(14px);
     }
-    button:hover{border-color:rgba(140,190,255,.65)}
-    .err{
-      position:absolute; inset:0; display:none; place-items:center;
-      background:rgba(0,0,0,.55); color:#fff; padding:24px; text-align:center;
+    .row{display:flex;justify-content:space-between;align-items:center}
+    .label{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:rgba(159,176,214,.85)}
+    .val{font-size:12px;color:rgba(107,195,255,.95);font-weight:600}
+    input[type="range"]{width:100%}
+    .btn{
+      width:100%;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:999px;
+      background:rgba(2,8,23,.45);
+      color:var(--text);
+      border:1px solid rgba(140,190,255,.3);
+      cursor:pointer;
     }
-    .err pre{max-width:900px; white-space:pre-wrap; text-align:left; opacity:.9}
+    .btn:hover{border-color:rgba(140,190,255,.55)}
+
+    @media (max-width: 800px){
+      .simFrame{height:520px}
+      .panel{width:240px}
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <h1>Interactive Web Simulation (DEM-like)</h1>
-    <p>Mouse like EDEM: <b>Left-drag rotate</b>, <b>Right-drag pan</b>, <b>Wheel zoom</b>.</p>
+    <h1>INTERACTIVE DEM-LIKE SIMULATION</h1>
+    <p>Mouse like EDEM: <b>Left-drag</b> rotate, <b>Right-drag</b> pan, <b>Wheel</b> zoom.</p>
 
-    <div class="stage">
-      <canvas id="c"></canvas>
+    <div class="card">
+      <div class="simFrame">
+        <div class="hint">Mouse: rotate • Wheel: zoom • Right-drag: pan</div>
 
-      <div class="hud">
-        <div class="row"><div class="lab">SPINNER RPM</div><div class="val" id="rpmVal">650</div></div>
-        <input id="rpm" type="range" min="0" max="900" value="650" />
+        <canvas id="webdem-canvas"></canvas>
 
-        <div class="row" style="margin-top:12px"><div class="lab">FLOW RATE (PARTICLES/SEC)</div><div class="val" id="ppsVal">1200</div></div>
-        <input id="pps" type="range" min="0" max="3000" value="1200" />
+        <div class="panel">
+          <div class="row">
+            <div class="label">Spinner RPM</div>
+            <div class="val" id="rpmVal">650</div>
+          </div>
+          <input id="rpm" type="range" min="0" max="900" value="650" />
 
-        <button id="reset">Reset</button>
-      </div>
+          <div style="height:10px"></div>
 
-      <div class="err" id="err">
-        <div>
-          <h2 style="margin:0 0 10px">Simulation failed to start</h2>
-          <p style="margin:0 0 10px">Open DevTools → Console for the exact error.</p>
-          <pre id="errText"></pre>
+          <div class="row">
+            <div class="label">Flow rate (particles/sec)</div>
+            <div class="val" id="ppsVal">1200</div>
+          </div>
+          <input id="pps" type="range" min="0" max="3000" value="1200" />
+
+          <button class="btn" id="resetSim">Reset</button>
         </div>
       </div>
     </div>
   </div>
 
   <script type="module">
-    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-    import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-    const errBox = document.getElementById("err");
-    const errText = document.getElementById("errText");
-    const showErr = (e) => {
-      console.error(e);
-      errText.textContent = String(e?.stack || e);
-      errBox.style.display = "grid";
-    };
+    console.log("WEBDEM v1.10 (twin-disc)");
 
-    try {
-      const canvas = document.getElementById("c");
-      const rpmEl = document.getElementById("rpm");
-      const ppsEl = document.getElementById("pps");
-      const rpmVal = document.getElementById("rpmVal");
-      const ppsVal = document.getElementById("ppsVal");
-      const resetBtn = document.getElementById("reset");
+    // ===== DOM =====
+    const canvas = document.getElementById("webdem-canvas");
+    const rpmEl = document.getElementById("rpm");
+    const ppsEl = document.getElementById("pps");
+    const rpmVal = document.getElementById("rpmVal");
+    const ppsVal = document.getElementById("ppsVal");
+    const resetBtn = document.getElementById("resetSim");
 
-      let rpm = +rpmEl.value, pps = +ppsEl.value;
-      rpmVal.textContent = rpm; ppsVal.textContent = pps;
-      rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
-      ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
+    let rpm = +rpmEl.value;
+    let pps = +ppsEl.value;
 
-      // Params
-      const discY = 0.60, discRadius = 0.95;
-      const discHalfSpacing = 0.95;     // distance ±0.95
-      const leftX = -discHalfSpacing, rightX = +discHalfSpacing;
-      const bladeCount = 4;
-      const feedY = discY + 0.55;
-      const innerOffset = Math.min(0.48, discRadius - 0.18);
-      const orW = 0.22, orL = 0.34;
+    rpmVal.textContent = rpm;
+    ppsVal.textContent = pps;
+    rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
+    ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
 
-      const g = -9.81, linDrag = 0.06;
-      const pickupWindow = 0.12, radialDrift = 0.55, angFric = 2.6;
-      const bladeHitTol = 0.10, minSlip = 0.8, releaseR = 0.86 * discRadius;
+    // ===== Params =====
+    const discY = 0.60;
+    const discRadius = 0.95;
+    const bladeCount = 4;
 
-      const bladePitchDeg = 32, throwUpDeg = 14, jitterDeg = 6;
-      const behindConeDeg = 55;
+    // distance +/-0.95 => spacing 1.90
+    const discSpacing = 1.90;
+    const leftX = -discSpacing / 2;
+    const rightX = +discSpacing / 2;
 
-      const MAX = 60000;
-      const pos = new Float32Array(MAX*3);
-      const vel = new Float32Array(MAX*3);
-      const alive = new Uint8Array(MAX);
-      const state = new Uint8Array(MAX);    // 0 fall, 2 disc, 1 fly, 3 land
-      const discId = new Int8Array(MAX);
-      const rOn = new Float32Array(MAX);
-      const phiOn = new Float32Array(MAX);
-      const phiDot = new Float32Array(MAX);
+    const feedY = discY + 0.55;
+    const innerOffset = Math.min(0.48, discRadius - 0.18);
+    const orificeW = 0.22;
+    const orificeLen = 0.34;
 
-      let cursor = 0, emitAcc = 0;
+    const pickupWindow = 0.12;
+    const radialDrift = 0.55;
+    const angFric = 2.6;
+    const bladeHitTol = 0.10;
+    const minSlip = 0.8;
+    const releaseR = 0.86 * discRadius;
 
-      const randn = () => {
-        let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random();
-        return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
-      };
-      const wrapToPi = (a) => {
-        a=(a+Math.PI)%(2*Math.PI); if(a<0)a+=2*Math.PI; return a-Math.PI;
-      };
-      const sampleRect = (cx,cz,w,l)=>({x:cx+(Math.random()-0.5)*w,z:cz+(Math.random()-0.5)*l});
+    const bladePitchDeg = 32;
+    const throwUpDeg = 14;
+    const jitterDeg = 6;
 
-      // Three
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+    const enforceBehind = true;
+    const behindConeDeg = 55;
+    const rearDeflector = true;
+
+    const g = -9.81;
+    const linDrag = 0.06;
+
+    const MAX = 65000;
+
+    // states: 0 falling, 2 on-disc, 1 flying, 3 landed
+    const pos = new Float32Array(MAX * 3);
+    const vel = new Float32Array(MAX * 3);
+    const alive = new Uint8Array(MAX);
+    const state = new Uint8Array(MAX);
+
+    const discId = new Int8Array(MAX);
+    const rOn = new Float32Array(MAX);
+    const phiOn = new Float32Array(MAX);
+    const phiDot = new Float32Array(MAX);
+
+    // ===== Three.js =====
+    let renderer, scene, camera, clock;
+    let controls;                 // ✅ global (important)
+    let discL, discR, hopper;
+    let particlesMesh;
+    const tmp = new THREE.Object3D();
+    let cursor = 0;
+
+    function wrapToPi(a) {
+      a = (a + Math.PI) % (2 * Math.PI);
+      if (a < 0) a += 2 * Math.PI;
+      return a - Math.PI;
+    }
+    function randn() {
+      let u = 0, v = 0;
+      while (!u) u = Math.random();
+      while (!v) v = Math.random();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    function sampleRect(cx, cz, w, l) {
+      return { x: cx + (Math.random() - 0.5) * w, z: cz + (Math.random() - 0.5) * l };
+    }
+    function hideInstance(i) {
+      tmp.position.set(1e6, 1e6, 1e6);
+      tmp.scale.setScalar(0.001);
+      tmp.updateMatrix();
+      particlesMesh.setMatrixAt(i, tmp.matrix);
+    }
+    function setInstance(i, x, y, z) {
+      tmp.position.set(x, y, z);
+      tmp.scale.setScalar(1);
+      tmp.updateMatrix();
+      particlesMesh.setMatrixAt(i, tmp.matrix);
+    }
+
+    function resetSim() {
+      alive.fill(0);
+      state.fill(0);
+      cursor = 0;
+      for (let i = 0; i < MAX; i++) hideInstance(i);
+      particlesMesh.instanceMatrix.needsUpdate = true;
+    }
+
+    function addBlades(disc, color) {
+      const group = new THREE.Group();
+      const geo = new THREE.BoxGeometry(0.70, 0.06, 0.12);
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.4 });
+
+      for (let k = 0; k < bladeCount; k++) {
+        const a = k * (2 * Math.PI / bladeCount);
+        const blade = new THREE.Mesh(geo, mat);
+        blade.position.set(Math.cos(a) * 0.45, 0.08, Math.sin(a) * 0.45);
+        blade.rotation.y = a;
+        group.add(blade);
+      }
+      disc.add(group);
+    }
+
+    function spawnFalling(i, x, y, z) {
+      alive[i] = 1;
+      state[i] = 0;
+      pos[i * 3] = x;
+      pos[i * 3 + 1] = y;
+      pos[i * 3 + 2] = z;
+
+      vel[i * 3] = 0.06 * randn();
+      vel[i * 3 + 1] = -0.25;
+      vel[i * 3 + 2] = 0.06 * randn();
+    }
+
+    function beginOnDisc(i, whichDisc, discX, discAngle, omegaDisc) {
+      state[i] = 2;
+      discId[i] = whichDisc;
+
+      const dx = pos[i * 3] - discX;
+      const dz = pos[i * 3 + 2] - 0;
+
+      rOn[i] = Math.min(Math.max(0.15, Math.hypot(dx, dz)), discRadius - 0.03);
+      phiOn[i] = Math.atan2(dz, dx);
+
+      phiDot[i] = omegaDisc * 0.25;
+
+      pos[i * 3 + 1] = discY + 0.02;
+      vel[i * 3] = 0;
+      vel[i * 3 + 1] = 0;
+      vel[i * 3 + 2] = 0;
+    }
+
+    function clampBehindCone(vx, vz, coneDeg) {
+      const cone = (coneDeg * Math.PI) / 180;
+      const mag = Math.hypot(vx, vz) + 1e-9;
+
+      let phi = Math.atan2(vx, -vz);
+      if (phi > cone) phi = cone;
+      if (phi < -cone) phi = -cone;
+
+      return { vx: mag * Math.sin(phi), vz: -mag * Math.cos(phi) };
+    }
+
+    function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
+      state[i] = 1;
+
+      const jitter = (jitterDeg * Math.PI / 180) * (Math.random() - 0.5);
+      const bladeTheta = discAngle + bladeRel + jitter;
+
+      const ux = Math.cos(bladeTheta);
+      const uz = Math.sin(bladeTheta);
+
+      const sgn = omegaDisc >= 0 ? 1 : -1;
+      const tx = sgn * (-Math.sin(bladeTheta));
+      const tz = sgn * ( Math.cos(bladeTheta));
+
+      const pitch = bladePitchDeg * Math.PI / 180;
+      let dirx = tx * Math.cos(pitch) + ux * Math.sin(pitch);
+      let dirz = tz * Math.cos(pitch) + uz * Math.sin(pitch);
+
+      const dmag = Math.hypot(dirx, dirz) + 1e-9;
+      dirx /= dmag; dirz /= dmag;
+
+      const rim = Math.abs(omegaDisc) * r;
+      const kick = Math.max(1.0, 1.10 * rim + 0.18 * rim * randn());
+
+      let vx = dirx * kick;
+      let vz = dirz * kick;
+
+      const outward = discX < 0 ? -1 : +1;
+      vx += outward * (0.18 * kick);
+
+      if (rearDeflector) vz = -Math.abs(vz);
+
+      if (enforceBehind) {
+        const cl = clampBehindCone(vx, vz, behindConeDeg);
+        vx = cl.vx; vz = cl.vz;
+      }
+
+      const up = throwUpDeg * Math.PI / 180;
+      const vy = Math.max(0.4, kick * Math.tan(up) + 0.15 * Math.random());
+
+      vel[i * 3] = vx;
+      vel[i * 3 + 1] = vy;
+      vel[i * 3 + 2] = vz;
+
+      pos[i * 3 + 1] = discY + 0.03;
+    }
+
+    function init() {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
-      const scene = new THREE.Scene();
-      const clock = new THREE.Clock();
+      scene = new THREE.Scene();
+      clock = new THREE.Clock();
 
-      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
-      camera.position.set(0, 8.5, -15.5);
+      camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
+      camera.position.set(0, 9.0, -17.0);
       camera.lookAt(0, 1, 0);
 
-      const controls = new OrbitControls(camera, renderer.domElement);
+      controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
       controls.enablePan = true;
@@ -173,236 +378,167 @@
       scene.add(sun);
 
       const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(300,300),
-        new THREE.MeshStandardMaterial({ color:0x020617, roughness:0.95 })
+        new THREE.PlaneGeometry(300, 300),
+        new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.95 })
       );
-      ground.rotation.x = -Math.PI/2;
+      ground.rotation.x = -Math.PI / 2;
       scene.add(ground);
 
-      const hopper = new THREE.Mesh(
-        new THREE.BoxGeometry(2.4,1.5,2.0),
-        new THREE.MeshStandardMaterial({ color:0x111827, roughness:0.6 })
+      hopper = new THREE.Mesh(
+        new THREE.BoxGeometry(2.4, 1.5, 2.0),
+        new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
       );
-      hopper.position.set(0,2.35,0);
+      hopper.position.set(0, 2.35, 0);
       scene.add(hopper);
 
-      const addBlades = (disc, color) => {
-        const group = new THREE.Group();
-        const geo = new THREE.BoxGeometry(0.70,0.06,0.12);
-        const mat = new THREE.MeshStandardMaterial({ color, roughness:0.4 });
-        for(let k=0;k<bladeCount;k++){
-          const a=k*(2*Math.PI/bladeCount);
-          const b=new THREE.Mesh(geo,mat);
-          b.position.set(Math.cos(a)*0.45,0.08,Math.sin(a)*0.45);
-          b.rotation.y=a;
-          group.add(b);
-        }
-        disc.add(group);
-      };
-
       const discGeo = new THREE.CylinderGeometry(discRadius, discRadius, 0.15, 48);
-      const discL = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color:0x2563eb }));
-      const discR = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color:0x1d4ed8 }));
+      discL = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x2563eb }));
+      discR = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
       discL.position.set(leftX, discY, 0);
       discR.position.set(rightX, discY, 0);
       addBlades(discL, 0x93c5fd);
       addBlades(discR, 0x7dd3fc);
       scene.add(discL, discR);
 
-      const orGeo = new THREE.BoxGeometry(orW, 0.05, orL);
-      const orMat = new THREE.MeshStandardMaterial({ color:0x0f172a, roughness:0.55 });
-      const orLmesh = new THREE.Mesh(orGeo, orMat);
-      const orRmesh = new THREE.Mesh(orGeo, orMat);
-      orLmesh.position.set(leftX + innerOffset, feedY, 0);
-      orRmesh.position.set(rightX - innerOffset, feedY, 0);
-      scene.add(orLmesh, orRmesh);
-
-      const particlesMesh = new THREE.InstancedMesh(
+      particlesMesh = new THREE.InstancedMesh(
         new THREE.SphereGeometry(0.028, 6, 6),
-        new THREE.MeshStandardMaterial({ color:0x6bc3ff }),
+        new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
         MAX
       );
       particlesMesh.frustumCulled = false;
-      particlesMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       scene.add(particlesMesh);
-
-      const tmp = new THREE.Object3D();
-      const hide = (i)=>{ tmp.position.set(1e6,1e6,1e6); tmp.scale.setScalar(0.001); tmp.updateMatrix(); particlesMesh.setMatrixAt(i,tmp.matrix); };
-      const setI = (i,x,y,z)=>{ tmp.position.set(x,y,z); tmp.scale.setScalar(1); tmp.updateMatrix(); particlesMesh.setMatrixAt(i,tmp.matrix); };
-
-      for(let i=0;i<MAX;i++) hide(i);
+      for (let i = 0; i < MAX; i++) hideInstance(i);
       particlesMesh.instanceMatrix.needsUpdate = true;
 
-      const resetSim = ()=>{ alive.fill(0); state.fill(0); cursor=0; emitAcc=0; for(let i=0;i<MAX;i++) hide(i); particlesMesh.instanceMatrix.needsUpdate=true; };
       resetBtn.onclick = resetSim;
 
-      const spawnFalling = (i,x,y,z)=>{
-        alive[i]=1; state[i]=0;
-        pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=z;
-        vel[i*3]=0.06*randn(); vel[i*3+1]=-0.25; vel[i*3+2]=0.06*randn();
-      };
-
-      const beginOnDisc = (i,which,discX,omegaDisc)=>{
-        state[i]=2; discId[i]=which;
-        const dx=pos[i*3]-discX, dz=pos[i*3+2];
-        rOn[i]=Math.min(Math.max(0.15, Math.hypot(dx,dz)), discRadius-0.03);
-        phiOn[i]=Math.atan2(dz,dx);
-        phiDot[i]=omegaDisc*0.25;
-        pos[i*3+1]=discY+0.02;
-        vel[i*3]=vel[i*3+1]=vel[i*3+2]=0;
-      };
-
-      const clampBehindCone = (vx,vz,coneDeg)=>{
-        const cone=coneDeg*Math.PI/180;
-        const mag=Math.hypot(vx,vz)+1e-9;
-        let phi=Math.atan2(vx,-vz);
-        if(phi>cone)phi=cone; if(phi<-cone)phi=-cone;
-        return { vx: mag*Math.sin(phi), vz: -mag*Math.cos(phi) };
-      };
-
-      const eject = (i,discX,discAngle,omegaDisc,r,bladeRel)=>{
-        state[i]=1;
-        const jitter=(jitterDeg*Math.PI/180)*(Math.random()-0.5);
-        const bladeTheta=discAngle+bladeRel+jitter;
-
-        const ux=Math.cos(bladeTheta), uz=Math.sin(bladeTheta);
-        const sgn=omegaDisc>=0?1:-1;
-        const tx=sgn*(-Math.sin(bladeTheta));
-        const tz=sgn*( Math.cos(bladeTheta));
-
-        const pitch=bladePitchDeg*Math.PI/180;
-        let dirx=tx*Math.cos(pitch)+ux*Math.sin(pitch);
-        let dirz=tz*Math.cos(pitch)+uz*Math.sin(pitch);
-        const dmag=Math.hypot(dirx,dirz)+1e-9;
-        dirx/=dmag; dirz/=dmag;
-
-        const rim=Math.abs(omegaDisc)*r;
-        const kick=Math.max(1.0, 1.10*rim + 0.18*rim*randn());
-
-        let vx=dirx*kick;
-        let vz=dirz*kick;
-
-        // tiny outward bias per disc
-        vx += (discX<0 ? -1 : +1) * (0.18*kick);
-
-        // rear-only fan
-        vz = -Math.abs(vz);
-        const cl = clampBehindCone(vx,vz,behindConeDeg);
-        vx=cl.vx; vz=cl.vz;
-
-        const up=throwUpDeg*Math.PI/180;
-        const vy=Math.max(0.4, kick*Math.tan(up) + 0.15*Math.random());
-
-        vel[i*3]=vx; vel[i*3+1]=vy; vel[i*3+2]=vz;
-        pos[i*3+1]=discY+0.03;
-      };
-
-      const resize = ()=>{
-        const w=canvas.clientWidth, h=canvas.clientHeight;
-        if(!w||!h) return;
-        renderer.setSize(w,h,false);
-        camera.aspect=w/h;
-        camera.updateProjectionMatrix();
-      };
-      addEventListener("resize", resize);
       resize();
+      animate();
+    }
 
-      const bladeStep = (2*Math.PI)/bladeCount;
+    function resize() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (w === 0 || h === 0) return;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
 
-      function animate(){
-        requestAnimationFrame(animate);
-        const dt = Math.min(clock.getDelta(), 0.02);
+    function animate() {
+      requestAnimationFrame(animate);
 
-        const omega = (rpm*2*Math.PI)/60;
-        const omegaL = +omega, omegaR = -omega;
+      // auto-resize
+      const pxW = Math.floor(canvas.clientWidth * renderer.getPixelRatio());
+      const pxH = Math.floor(canvas.clientHeight * renderer.getPixelRatio());
+      if (canvas.width !== pxW || canvas.height !== pxH) resize();
 
-        discL.rotation.y += omegaL*dt;
-        discR.rotation.y += omegaR*dt;
+      const dt = Math.min(clock.getDelta(), 0.02);
 
-        emitAcc += pps*dt;
-        while(emitAcc >= 1){
-          emitAcc -= 1;
-          const i = cursor; cursor = (cursor+1) % MAX;
+      const omega = (rpm * 2 * Math.PI) / 60;
+      const omegaL = +omega;
+      const omegaR = -omega;
 
-          const left = Math.random() < 0.5;
-          const cx = left ? (leftX + innerOffset) : (rightX - innerOffset);
-          const p = sampleRect(cx, 0, orW, orL);
-          spawnFalling(i, p.x, feedY, p.z);
-        }
+      discL.rotation.y += omegaL * dt;
+      discR.rotation.y += omegaR * dt;
 
-        for(let i=0;i<MAX;i++){
-          if(!alive[i]) continue;
+      const emit = Math.floor(pps * dt);
+      const emitLeft = Math.floor(emit / 2);
+      const emitRight = emit - emitLeft;
 
-          if(state[i] === 3){
-            setI(i, pos[i*3], 0.02, pos[i*3+2]);
-            continue;
-          }
+      const centerLx = leftX + innerOffset;
+      const centerRx = rightX - innerOffset;
 
-          if(state[i] === 2){
-            const which = discId[i];
-            const discX = which===0 ? leftX : rightX;
-            const discAngle = which===0 ? discL.rotation.y : discR.rotation.y;
-            const omegaDisc = which===0 ? omegaL : omegaR;
-
-            phiDot[i] += (omegaDisc - phiDot[i]) * (2.6 * dt);
-            phiOn[i] += phiDot[i] * dt;
-            rOn[i] = Math.min(discRadius-0.02, rOn[i] + radialDrift*dt);
-
-            pos[i*3]   = discX + rOn[i]*Math.cos(phiOn[i]);
-            pos[i*3+1] = discY + 0.02;
-            pos[i*3+2] =        rOn[i]*Math.sin(phiOn[i]);
-
-            const phiRel = wrapToPi(phiOn[i] - discAngle);
-            const k = Math.round(phiRel / bladeStep);
-            const bladeRel = k * bladeStep;
-            const diff = wrapToPi(phiRel - bladeRel);
-            const slip = Math.abs(omegaDisc - phiDot[i]);
-
-            if ((Math.abs(diff) < bladeHitTol && slip > minSlip && rOn[i] > 0.22) || rOn[i] > releaseR) {
-              eject(i, discX, discAngle, omegaDisc, rOn[i], bladeRel);
-            }
-
-            setI(i, pos[i*3], pos[i*3+1], pos[i*3+2]);
-            continue;
-          }
-
-          // fall/fly
-          vel[i*3+1] += g*dt;
-
-          const damp = Math.exp(-linDrag*dt);
-          vel[i*3] *= damp; vel[i*3+1] *= damp; vel[i*3+2] *= damp;
-
-          pos[i*3] += vel[i*3]*dt;
-          pos[i*3+1] += vel[i*3+1]*dt;
-          pos[i*3+2] += vel[i*3+2]*dt;
-
-          // pickup
-          if(state[i]===0 && pos[i*3+1] <= discY + pickupWindow){
-            const dxL = pos[i*3]-leftX,  dzL = pos[i*3+2];
-            const dxR = pos[i*3]-rightX, dzR = pos[i*3+2];
-            if(Math.hypot(dxL,dzL) <= discRadius) beginOnDisc(i,0,leftX,omegaL);
-            else if(Math.hypot(dxR,dzR) <= discRadius) beginOnDisc(i,1,rightX,omegaR);
-          }
-
-          if(pos[i*3+1] <= 0.02){
-            pos[i*3+1] = 0.02;
-            vel[i*3]=vel[i*3+1]=vel[i*3+2]=0;
-            state[i]=3;
-          }
-
-          setI(i, pos[i*3], pos[i*3+1], pos[i*3+2]);
-        }
-
-        particlesMesh.instanceMatrix.needsUpdate = true;
-        controls.update();
-        renderer.render(scene, camera);
+      for (let n = 0; n < emitLeft; n++) {
+        const i = cursor; cursor = (cursor + 1) % MAX;
+        const p = sampleRect(centerLx, 0, orificeW, orificeLen);
+        spawnFalling(i, p.x, feedY, p.z);
+      }
+      for (let n = 0; n < emitRight; n++) {
+        const i = cursor; cursor = (cursor + 1) % MAX;
+        const p = sampleRect(centerRx, 0, orificeW, orificeLen);
+        spawnFalling(i, p.x, feedY, p.z);
       }
 
-      animate();
-      console.log("WEBDEM running ✅");
-    } catch (e) {
-      showErr(e);
+      const bladeStep = (2 * Math.PI) / bladeCount;
+
+      for (let i = 0; i < MAX; i++) {
+        if (!alive[i]) continue;
+
+        if (state[i] === 3) {
+          setInstance(i, pos[i * 3], 0.02, pos[i * 3 + 2]);
+          continue;
+        }
+
+        if (state[i] === 2) {
+          const which = discId[i];
+          const discX = which === 0 ? leftX : rightX;
+          const discAngle = which === 0 ? discL.rotation.y : discR.rotation.y;
+          const omegaDisc = which === 0 ? omegaL : omegaR;
+
+          phiDot[i] += (omegaDisc - phiDot[i]) * (angFric * dt);
+          phiOn[i] += phiDot[i] * dt;
+          rOn[i] = Math.min(discRadius - 0.02, rOn[i] + radialDrift * dt);
+
+          pos[i * 3] = discX + rOn[i] * Math.cos(phiOn[i]);
+          pos[i * 3 + 1] = discY + 0.02;
+          pos[i * 3 + 2] = rOn[i] * Math.sin(phiOn[i]);
+
+          const phiRel = wrapToPi(phiOn[i] - discAngle);
+          const k = Math.round(phiRel / bladeStep);
+          const bladeRel = k * bladeStep;
+          const diff = wrapToPi(phiRel - bladeRel);
+
+          const slip = Math.abs(omegaDisc - phiDot[i]);
+
+          if ((Math.abs(diff) < bladeHitTol && slip > minSlip && rOn[i] > 0.22) || rOn[i] > releaseR) {
+            eject(i, discX, discAngle, omegaDisc, rOn[i], bladeRel);
+          }
+
+          setInstance(i, pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+          continue;
+        }
+
+        // falling/flying integrate
+        vel[i * 3 + 1] += g * dt;
+
+        const damp = Math.exp(-linDrag * dt);
+        vel[i * 3] *= damp;
+        vel[i * 3 + 1] *= damp;
+        vel[i * 3 + 2] *= damp;
+
+        pos[i * 3] += vel[i * 3] * dt;
+        pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
+        pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
+
+        if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
+          const dxL = pos[i * 3] - leftX;
+          const dzL = pos[i * 3 + 2];
+          const dxR = pos[i * 3] - rightX;
+          const dzR = pos[i * 3 + 2];
+
+          if (Math.hypot(dxL, dzL) <= discRadius) beginOnDisc(i, 0, leftX, discL.rotation.y, omegaL);
+          else if (Math.hypot(dxR, dzR) <= discRadius) beginOnDisc(i, 1, rightX, discR.rotation.y, omegaR);
+        }
+
+        if (pos[i * 3 + 1] <= 0.02) {
+          pos[i * 3 + 1] = 0.02;
+          vel[i * 3] = 0; vel[i * 3 + 1] = 0; vel[i * 3 + 2] = 0;
+          state[i] = 3;
+        }
+
+        if (state[i] === 0 && pos[i * 3 + 1] < discY - 0.05) state[i] = 1;
+
+        setInstance(i, pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+      }
+
+      particlesMesh.instanceMatrix.needsUpdate = true;
+      controls.update();
+      renderer.render(scene, camera);
     }
+
+    init();
   </script>
 </body>
 </html>
