@@ -54,8 +54,8 @@ const forwardSpeed = 5.5; // set 0.0 if you want to test in place
 const discY = 0.60;
 const discRadius = 0.95;
 
-const leftX = -0.75;
-const rightX = 0.75;
+const leftX = -0.95;
+const rightX = 0.95;
 
 const bladeCount = 4;
 
