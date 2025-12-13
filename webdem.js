@@ -1,11 +1,9 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-console.log("WEBDEM v1.00 (twin-disc, split feed, behind-cone throw, spacing ±0.95)");
+console.log("WEBDEM v1.10 (slip->blade hit->eject->land pattern)");
 
+// ===== DOM =====
 const canvas = document.getElementById("webdem-canvas");
-if (!canvas) throw new Error("Canvas #webdem-canvas not found");
-
-// ===== UI =====
 const rpmEl = document.getElementById("rpm");
 const ppsEl = document.getElementById("pps");
 const rpmVal = document.getElementById("rpmVal");
@@ -17,88 +15,84 @@ let pps = ppsEl ? +ppsEl.value : 1200;
 
 if (rpmVal) rpmVal.textContent = rpm;
 if (ppsVal) ppsVal.textContent = pps;
-
 if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
 if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
 
-// ===== Scene =====
-let renderer, scene, camera, clock;
-
-// ===== Geometry + Setup =====
+// ===== Params =====
+// geometry
 const discY = 0.60;
 const discRadius = 0.95;
 const bladeCount = 4;
 
-// USER REQUEST: distance ±0.95
-const discSpacing = 1.90;     // centers at -0.95 and +0.95
+// REQUEST: distance ±0.95 => spacing 1.90
+const discSpacing = 1.90;
 const leftX = -discSpacing / 2;
 const rightX = +discSpacing / 2;
 
-// feed/orifice
+// split orifices (rectangles) above inner side of each disc
 const feedY = discY + 0.55;
 const innerOffset = Math.min(0.48, discRadius - 0.18);
-const orificeW = 0.22;        // rectangle width
-const orificeLen = 0.34;      // rectangle length
+const orificeW = 0.22;
+const orificeLen = 0.34;
 
-// motion / camera
-const forwardSpeed = 3.5;     // set 0 if you want stationary machine
-let spreaderZ = 0;
+// "more realistic" tuning
+const pickupWindow = 0.12;       // how close to disc to start contact
+const radialDrift = 0.55;        // outward drift along disc
+const angFric = 2.6;             // angular velocity ramps to disc ω (lower => more slip)
+const bladeHitTol = 0.10;        // rad window for blade strike
+const minSlip = 0.8;             // rad/s slip needed for a "hit"
+const releaseR = 0.86 * discRadius;
 
-const camHeight = 9.5;
-const camBack = 18.0;
-const camLookAhead = 3.0;
+// blade physics
+const bladePitchDeg = 32;        // 0=tangential, 90=radial
+const throwUpDeg = 14;           // vertical lift angle
+const jitterDeg = 6;             // ejection direction jitter
 
-// pickup
-const pickupWindow = 0.18;
+// "no 360" deflector (rear-only)
+const enforceBehind = true;
+const behindConeDeg = 55;        // smaller => tighter fan
+const rearDeflector = true;      // clamps forward throws to rear
 
-// appearance + tuning
-const outwardFactor = 0.55;
-const bladeJitter = 0.40;
-const drag = 0.012;
+// drag + gravity
+const g = -9.81;
+const linDrag = 0.06;            // per second (air drag-ish)
 
-// BIG FIX: force behind-only cone (prevents 360°)
-const enforceBehindCone = true;
-const behindConeDeg = 70; // 40 narrower, 90 wider
+// particles
+const MAX = 65000;
 
-// carry-on-disc (removes jet-lines)
-const carryMin = 0.03;
-const carryMax = 0.10;
-const radialDrift = 0.65;
-
-// ===== Particles =====
-const MAX = 70000;
+// states:
+// 0 falling
+// 2 on-disc (slip + drift)
+// 1 flying
+// 3 landed (stays)
 const pos = new Float32Array(MAX * 3);
 const vel = new Float32Array(MAX * 3);
 const alive = new Uint8Array(MAX);
-
-// state: 0 falling, 2 riding disc, 1 thrown
 const state = new Uint8Array(MAX);
 
-// carry data (state==2)
-const discId = new Int8Array(MAX);      // 0 left, 1 right
-const carryT = new Float32Array(MAX);
-const carryDur = new Float32Array(MAX);
-const localR = new Float32Array(MAX);
-const localPhi = new Float32Array(MAX);
+// on-disc variables
+const discId = new Int8Array(MAX);     // 0 left, 1 right
+const rOn = new Float32Array(MAX);
+const phiOn = new Float32Array(MAX);   // world polar angle around disc center
+const phiDot = new Float32Array(MAX);  // particle angular speed (slip)
 
-let cursor = 0;
+// ===== Three.js =====
+let renderer, scene, camera, clock;
+let discL, discR, hopper, orificeMeshL, orificeMeshR, sDivider;
 let particlesMesh;
 const tmp = new THREE.Object3D();
+let cursor = 0;
 
-let hopper, discL, discR, orificeMeshL, orificeMeshR, sDivider;
-let frameDT = 0.016;
-
-// ===== Utils =====
+function wrapToPi(a) {
+  a = (a + Math.PI) % (2 * Math.PI);
+  if (a < 0) a += 2 * Math.PI;
+  return a - Math.PI;
+}
 function randn() {
   let u = 0, v = 0;
   while (!u) u = Math.random();
   while (!v) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-}
-function wrapToPi(a) {
-  a = (a + Math.PI) % (2 * Math.PI);
-  if (a < 0) a += 2 * Math.PI;
-  return a - Math.PI;
 }
 function sampleRect(cx, cz, w, l) {
   return { x: cx + (Math.random() - 0.5) * w, z: cz + (Math.random() - 0.5) * l };
@@ -116,99 +110,12 @@ function setInstance(i, x, y, z) {
   particlesMesh.setMatrixAt(i, tmp.matrix);
 }
 
-// ===== Particle transitions =====
-function spawnFalling(i, x, y, z) {
-  alive[i] = 1;
-  state[i] = 0;
-
-  pos[i * 3] = x;
-  pos[i * 3 + 1] = y;
-  pos[i * 3 + 2] = z;
-
-  vel[i * 3] = 0.03 * randn();
-  vel[i * 3 + 1] = -0.25;
-  vel[i * 3 + 2] = forwardSpeed + 0.03 * randn();
-}
-
-function beginCarry(i, whichDisc, discX, discAngle) {
-  state[i] = 2;
-  discId[i] = whichDisc;
-
-  carryT[i] = 0;
-  carryDur[i] = carryMin + Math.random() * (carryMax - carryMin);
-
-  const dx = pos[i * 3] - discX;
-  const dz = pos[i * 3 + 2] - spreaderZ;
-
-  const r = Math.max(0.15, Math.hypot(dx, dz));
-  const phiWorld = Math.atan2(dz, dx);
-
-  localR[i] = Math.min(r, discRadius - 0.03);
-  localPhi[i] = wrapToPi(phiWorld - discAngle);
-
-  pos[i * 3 + 1] = discY + 0.02;
-
-  vel[i * 3] = 0;
-  vel[i * 3 + 1] = 0;
-  vel[i * 3 + 2] = forwardSpeed;
-}
-
-function ejectFromDisc(i, discX, discAngle, omega, meanSpeed, speedStd) {
-  state[i] = 1;
-
-  const discAngleEff = discAngle + omega * (Math.random() - 0.5) * frameDT;
-
-  const dx = pos[i * 3] - discX;
-  const dz = pos[i * 3 + 2] - spreaderZ;
-  const theta = Math.atan2(dz, dx);
-
-  const bladeStep = (2 * Math.PI) / bladeCount;
-  const rel = wrapToPi(theta - discAngleEff);
-  const k = Math.round(rel / bladeStep + randn() * 0.25);
-
-  let bladeTheta = discAngleEff + k * bladeStep;
-  bladeTheta += (Math.random() - 0.5) * bladeJitter;
-
-  const tx = -Math.sin(bladeTheta);
-  const tz = Math.cos(bladeTheta);
-  const ux = Math.cos(bladeTheta);
-  const uz = Math.sin(bladeTheta);
-
-  const r = Math.max(0.18, Math.hypot(dx, dz));
-  const speed = Math.max(3.0, meanSpeed + randn() * speedStd);
-  const rimSpeed = Math.abs(omega) * r;
-
-  const tangential = 1.05 * speed + 0.50 * rimSpeed;
-  const radial = 0.85 * speed;
-
-  let vxRel = tangential * tx + radial * ux;
-  let vzRel = tangential * tz + radial * uz;
-
-  // twin-disc outward bias
-  const outward = discX < 0 ? -1 : +1;
-  vxRel += outward * (outwardFactor * speed);
-
-  // ===== FIX: force throw into a cone behind the machine (-Z) =====
-  if (enforceBehindCone) {
-    const cone = (behindConeDeg * Math.PI) / 180;
-    const mag = Math.hypot(vxRel, vzRel) + 1e-9;
-
-    // phi=0 => straight behind (-Z)
-    let phi = Math.atan2(vxRel, -vzRel);
-
-    if (phi > cone) phi = cone;
-    if (phi < -cone) phi = -cone;
-
-    vxRel = mag * Math.sin(phi);
-    vzRel = -mag * Math.cos(phi);
-  }
-
-  // assign final velocity
-  vel[i * 3] = vxRel * (0.90 + 0.25 * Math.random());
-  vel[i * 3 + 1] = 1.6 + Math.random() * 0.9;
-  vel[i * 3 + 2] = vzRel * (0.90 + 0.25 * Math.random()) + forwardSpeed;
-
-  pos[i * 3 + 1] = discY + 0.02;
+function resetSim() {
+  alive.fill(0);
+  state.fill(0);
+  cursor = 0;
+  for (let i = 0; i < MAX; i++) hideInstance(i);
+  particlesMesh.instanceMatrix.needsUpdate = true;
 }
 
 // ===== Visual parts =====
@@ -226,25 +133,19 @@ function addBlades(disc, color) {
   }
   disc.add(group);
 }
-
 function makeOrificeMesh(w, l, thickness, color) {
   return new THREE.Mesh(
     new THREE.BoxGeometry(w, thickness, l),
     new THREE.MeshStandardMaterial({ color, roughness: 0.55 })
   );
 }
-
 function makeSDivider(depth, color) {
   const shape = new THREE.Shape();
   shape.moveTo(-0.14, -0.22);
   shape.bezierCurveTo(0.14, -0.22, 0.14, -0.06, 0.00, 0.00);
   shape.bezierCurveTo(-0.14, 0.06, -0.14, 0.22, 0.14, 0.22);
 
-  const extrude = new THREE.ExtrudeGeometry(shape, {
-    depth,
-    bevelEnabled: false,
-    steps: 1,
-  });
+  const extrude = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps: 1 });
   extrude.translate(0, 0, -depth / 2);
 
   const mesh = new THREE.Mesh(
@@ -256,6 +157,109 @@ function makeSDivider(depth, color) {
   return mesh;
 }
 
+// ===== Spawn/Transitions =====
+function spawnFalling(i, x, y, z) {
+  alive[i] = 1;
+  state[i] = 0;
+
+  pos[i * 3] = x;
+  pos[i * 3 + 1] = y;
+  pos[i * 3 + 2] = z;
+
+  vel[i * 3] = 0.06 * randn();
+  vel[i * 3 + 1] = -0.25;
+  vel[i * 3 + 2] = 0.06 * randn();
+}
+
+function beginOnDisc(i, whichDisc, discX, discAngle, omegaDisc) {
+  state[i] = 2;
+  discId[i] = whichDisc;
+
+  const dx = pos[i * 3] - discX;
+  const dz = pos[i * 3 + 2] - 0;
+
+  rOn[i] = Math.min(Math.max(0.15, Math.hypot(dx, dz)), discRadius - 0.03);
+  phiOn[i] = Math.atan2(dz, dx);
+
+  // start with slip (slower than disc), ramp up via angFric
+  phiDot[i] = omegaDisc * 0.25;
+
+  pos[i * 3 + 1] = discY + 0.02;
+  vel[i * 3] = 0;
+  vel[i * 3 + 1] = 0;
+  vel[i * 3 + 2] = 0;
+}
+
+function clampBehindCone(vx, vz, coneDeg) {
+  const cone = (coneDeg * Math.PI) / 180;
+  const mag = Math.hypot(vx, vz) + 1e-9;
+
+  // phi=0 => straight behind (-Z)
+  let phi = Math.atan2(vx, -vz);
+  if (phi > cone) phi = cone;
+  if (phi < -cone) phi = -cone;
+
+  return {
+    vx: mag * Math.sin(phi),
+    vz: -mag * Math.cos(phi),
+  };
+}
+
+function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
+  state[i] = 1;
+
+  // blade world angle
+  const jitter = (jitterDeg * Math.PI / 180) * (Math.random() - 0.5);
+  const bladeTheta = discAngle + bladeRel + jitter;
+
+  // unit vectors at bladeTheta
+  const ux = Math.cos(bladeTheta);
+  const uz = Math.sin(bladeTheta);
+
+  // tangent direction depends on spin direction
+  const sgn = omegaDisc >= 0 ? 1 : -1;
+  const tx = sgn * (-Math.sin(bladeTheta));
+  const tz = sgn * ( Math.cos(bladeTheta));
+
+  // direction from blade pitch
+  const pitch = bladePitchDeg * Math.PI / 180;
+  let dirx = tx * Math.cos(pitch) + ux * Math.sin(pitch);
+  let dirz = tz * Math.cos(pitch) + uz * Math.sin(pitch);
+
+  // normalize
+  const dmag = Math.hypot(dirx, dirz) + 1e-9;
+  dirx /= dmag; dirz /= dmag;
+
+  // speed ~ rim speed + blade kick
+  const rim = Math.abs(omegaDisc) * r;
+  const kick = Math.max(1.0, 1.10 * rim + 0.18 * rim * randn());
+
+  let vx = dirx * kick;
+  let vz = dirz * kick;
+
+  // twin-disc outward bias (slight)
+  const outward = discX < 0 ? -1 : +1;
+  vx += outward * (0.18 * kick);
+
+  // rear deflector: kill forward velocity
+  if (rearDeflector) vz = -Math.abs(vz);
+
+  // enforce cone behind
+  if (enforceBehind) {
+    const cl = clampBehindCone(vx, vz, behindConeDeg);
+    vx = cl.vx; vz = cl.vz;
+  }
+
+  const up = throwUpDeg * Math.PI / 180;
+  const vy = Math.max(0.4, kick * Math.tan(up) + 0.15 * Math.random());
+
+  vel[i * 3] = vx;
+  vel[i * 3 + 1] = vy;
+  vel[i * 3 + 2] = vz;
+
+  pos[i * 3 + 1] = discY + 0.03;
+}
+
 // ===== Init =====
 function init() {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -264,8 +268,8 @@ function init() {
   scene = new THREE.Scene();
   clock = new THREE.Clock();
 
-  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 900);
-  camera.position.set(0, camHeight, -camBack);
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
+  camera.position.set(0, 9.0, -17.0);
   camera.lookAt(0, 1, 0);
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x020617, 1.0));
@@ -290,30 +294,24 @@ function init() {
   const discGeo = new THREE.CylinderGeometry(discRadius, discRadius, 0.15, 48);
   discL = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x2563eb }));
   discR = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
-
   discL.position.set(leftX, discY, 0);
   discR.position.set(rightX, discY, 0);
-
   addBlades(discL, 0x93c5fd);
   addBlades(discR, 0x7dd3fc);
-
   scene.add(discL, discR);
 
-  // rectangular split orifices (inner side of each disc)
+  // rectangular split orifices (inner side)
   orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
   orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
-
   orificeMeshL.position.set(leftX + innerOffset, feedY, 0);
   orificeMeshR.position.set(rightX - innerOffset, feedY, 0);
-
   scene.add(orificeMeshL, orificeMeshR);
 
-  // S-divider (visual)
+  // S divider (visual)
   sDivider = makeSDivider(0.18, 0x111827);
   sDivider.position.set(0, feedY + 0.03, 0);
   scene.add(sDivider);
 
-  // particles
   particlesMesh = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.028, 6, 6),
     new THREE.MeshStandardMaterial({ color: 0x6bc3ff }),
@@ -321,20 +319,10 @@ function init() {
   );
   particlesMesh.frustumCulled = false;
   scene.add(particlesMesh);
-
   for (let i = 0; i < MAX; i++) hideInstance(i);
   particlesMesh.instanceMatrix.needsUpdate = true;
 
-  if (resetBtn) {
-    resetBtn.onclick = () => {
-      alive.fill(0);
-      state.fill(0);
-      cursor = 0;
-      spreaderZ = 0;
-      for (let i = 0; i < MAX; i++) hideInstance(i);
-      particlesMesh.instanceMatrix.needsUpdate = true;
-    };
-  }
+  if (resetBtn) resetBtn.onclick = resetSim;
 
   resize();
   animate();
@@ -343,6 +331,7 @@ function init() {
 function resize() {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
+  if (w === 0 || h === 0) return;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
@@ -353,34 +342,29 @@ window.addEventListener("resize", resize);
 function animate() {
   requestAnimationFrame(animate);
 
+  // auto-resize if iframe changes
+  if (canvas.width !== Math.floor(canvas.clientWidth * renderer.getPixelRatio()) ||
+      canvas.height !== Math.floor(canvas.clientHeight * renderer.getPixelRatio())) {
+    resize();
+  }
+
   const dt = Math.min(clock.getDelta(), 0.02);
-  frameDT = dt;
 
-  // move forward
-  spreaderZ += forwardSpeed * dt;
-
-  hopper.position.z = spreaderZ;
-  discL.position.z = spreaderZ;
-  discR.position.z = spreaderZ;
-  orificeMeshL.position.z = spreaderZ;
-  orificeMeshR.position.z = spreaderZ;
-  sDivider.position.z = spreaderZ;
-
-  camera.position.set(0, camHeight, spreaderZ - camBack);
-  camera.lookAt(0, 1, spreaderZ + camLookAhead);
-
-  // discs rotate opposite
+  // disc ω (opposite rotation)
   const omega = (rpm * 2 * Math.PI) / 60;
-  discL.rotation.y += omega * dt;
-  discR.rotation.y -= omega * dt;
+  const omegaL = +omega;
+  const omegaR = -omega;
+
+  discL.rotation.y += omegaL * dt;
+  discR.rotation.y += omegaR * dt;
 
   // emit 50/50 from split feed
   const emit = Math.floor(pps * dt);
   const emitLeft = Math.floor(emit / 2);
   const emitRight = emit - emitLeft;
 
-  const centerL = { x: leftX + innerOffset, z: spreaderZ };
-  const centerR = { x: rightX - innerOffset, z: spreaderZ };
+  const centerL = { x: leftX + innerOffset, z: 0 };
+  const centerR = { x: rightX - innerOffset, z: 0 };
 
   for (let n = 0; n < emitLeft; n++) {
     const i = cursor; cursor = (cursor + 1) % MAX;
@@ -393,68 +377,92 @@ function animate() {
     spawnFalling(i, p.x, feedY, p.z);
   }
 
-  const meanSpeed = 9 + (rpm / 1200) * 18;
-  const speedStd = 0.22 * meanSpeed;
-  const g = -9.81;
+  const bladeStep = (2 * Math.PI) / bladeCount;
 
   for (let i = 0; i < MAX; i++) {
     if (!alive[i]) continue;
 
-    // riding disc
-    if (state[i] === 2) {
-      carryT[i] += dt;
+    // LAND: stay (pattern visualization)
+    if (state[i] === 3) {
+      setInstance(i, pos[i * 3], 0.02, pos[i * 3 + 2]);
+      continue;
+    }
 
+    // ON DISC: slip -> blade catches -> eject
+    if (state[i] === 2) {
       const which = discId[i];
       const discX = which === 0 ? leftX : rightX;
       const discAngle = which === 0 ? discL.rotation.y : discR.rotation.y;
-      const discOmega = which === 0 ? omega : -omega;
+      const omegaDisc = which === 0 ? omegaL : omegaR;
 
-      localR[i] = Math.min(discRadius - 0.02, localR[i] + radialDrift * dt);
-      const phi = discAngle + localPhi[i];
+      // ramp angular speed toward ω (slip model)
+      phiDot[i] += (omegaDisc - phiDot[i]) * (angFric * dt);
+      phiOn[i] += phiDot[i] * dt;
 
-      pos[i * 3] = discX + localR[i] * Math.cos(phi);
+      // drift outward
+      rOn[i] = Math.min(discRadius - 0.02, rOn[i] + radialDrift * dt);
+
+      // position on disc
+      pos[i * 3] = discX + rOn[i] * Math.cos(phiOn[i]);
       pos[i * 3 + 1] = discY + 0.02;
-      pos[i * 3 + 2] = spreaderZ + localR[i] * Math.sin(phi);
+      pos[i * 3 + 2] = 0 + rOn[i] * Math.sin(phiOn[i]);
 
-      if (carryT[i] >= carryDur[i]) {
-        ejectFromDisc(i, discX, discAngle, discOmega, meanSpeed, speedStd);
+      // blade hit detection (disc frame)
+      const phiRel = wrapToPi(phiOn[i] - discAngle);
+      const k = Math.round(phiRel / bladeStep);
+      const bladeRel = k * bladeStep;
+      const diff = wrapToPi(phiRel - bladeRel);
+
+      const slip = Math.abs(omegaDisc - phiDot[i]);
+
+      // eject if blade catches OR reached release radius
+      if ((Math.abs(diff) < bladeHitTol && slip > minSlip && rOn[i] > 0.22) || rOn[i] > releaseR) {
+        eject(i, discX, discAngle, omegaDisc, rOn[i], bladeRel);
       }
 
       setInstance(i, pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
       continue;
     }
 
-    // falling / thrown
+    // FALLING / FLYING integration
     vel[i * 3 + 1] += g * dt;
 
-    vel[i * 3] *= (1 - drag);
-    vel[i * 3 + 1] *= (1 - drag);
-    vel[i * 3 + 2] *= (1 - drag);
+    const damp = Math.exp(-linDrag * dt);
+    vel[i * 3] *= damp;
+    vel[i * 3 + 1] *= damp;
+    vel[i * 3 + 2] *= damp;
 
     pos[i * 3] += vel[i * 3] * dt;
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    // pickup window: falling touches disc -> start carry
+    // pickup: falling touches disc -> on-disc state (slip)
     if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
       const dxL = pos[i * 3] - leftX;
-      const dzL = pos[i * 3 + 2] - spreaderZ;
+      const dzL = pos[i * 3 + 2] - 0;
       const dxR = pos[i * 3] - rightX;
-      const dzR = pos[i * 3 + 2] - spreaderZ;
+      const dzR = pos[i * 3 + 2] - 0;
 
       if (Math.hypot(dxL, dzL) <= discRadius) {
-        beginCarry(i, 0, leftX, discL.rotation.y);
+        beginOnDisc(i, 0, leftX, discL.rotation.y, omegaL);
       } else if (Math.hypot(dxR, dzR) <= discRadius) {
-        beginCarry(i, 1, rightX, discR.rotation.y);
+        beginOnDisc(i, 1, rightX, discR.rotation.y, omegaR);
       }
     }
 
-    // ground hit -> despawn
-    if (pos[i * 3 + 1] < 0.02) {
-      alive[i] = 0;
-      hideInstance(i);
+    // ground contact -> land & stay (realistic pattern)
+    if (pos[i * 3 + 1] <= 0.02) {
+      pos[i * 3 + 1] = 0.02;
+      vel[i * 3] = 0;
+      vel[i * 3 + 1] = 0;
+      vel[i * 3 + 2] = 0;
+      state[i] = 3;
+      setInstance(i, pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
       continue;
     }
+
+    // once it's in flight
+    if (state[i] === 0 && pos[i * 3 + 1] < discY - 0.05) state[i] = 1;
 
     setInstance(i, pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
   }
