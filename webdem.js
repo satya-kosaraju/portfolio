@@ -1,6 +1,6 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-console.log("WEBDEM v8.5 (particles inherit forward machine speed)");
+console.log("WEBDEM v8.6 (discSpacing param + aligned orifices + smoother blade throw)");
 
 const canvas = document.getElementById("webdem-canvas");
 if (!canvas) throw new Error("Canvas #webdem-canvas not found");
@@ -39,31 +39,44 @@ if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = pps = +ppsEl.value);
 // ================= Parameters =================
 let spreaderZ = 0;
 
-// machine speed (spreader moving forward)
-const forwardSpeed = 3.5; // try 0.0 if you want a stationary demo
+// --- machine forward speed ---
+const forwardSpeed = 3.5; // set 0.0 if you want a stationary demo
 
-// camera follow (behind)
+// --- camera follow (behind) ---
 const cameraFollow = true;
 const camHeight = 9.5;
 const camBack = 18.0;
 const camLookAhead = 3.0;
 
+// --- discs ---
 const discY = 0.60;
 const discRadius = 0.95;
-const leftX = -0.85;
-const rightX = 0.85;
+
+// ✅ ONE knob for disc distance (YOU CHANGED THIS)
+const discSpacing = 1.70;        // 1.70 => +/-0.85
+const leftX = -discSpacing / 2;
+const rightX = +discSpacing / 2;
+
 const bladeCount = 4;
 
-// feed/orifice near discs (not inside hopper)
-const feedY = discY + 0.55;
+// --- orifice/feed near discs ---
+const feedY = discY + 0.55; // ~1.15
 
-// inner-side mid radius
-const innerOffset = 0.45;
+// inner-side mid radius offset from each disc center toward the middle
+// keep it well INSIDE discRadius
+const innerOffset = Math.min(0.48, discRadius - 0.18);
+
+// rectangle orifice size
 const orificeW = 0.20;
 const orificeLen = 0.32;
 
-// pickup window
+// pickup window (bigger = more reliable pickup)
 const pickupWindow = 0.16;
+
+// throw tuning (adjust these if you want wider/narrower)
+const outwardFactor = 0.45; // outward push strength
+const behindFactor = 0.18;  // behind push strength
+const bladeJitter = 0.18;   // radians; smooths “streak jets”
 
 // ================= Helpers =================
 function randn() {
@@ -107,7 +120,7 @@ function spawnFalling(i, x, y, z) {
   pos[i * 3 + 1] = y;
   pos[i * 3 + 2] = z;
 
-  // IMPORTANT: inherit machine forward speed so particles fall "with" the spreader
+  // inherit machine forward speed (so it falls WITH the spreader)
   vel[i * 3] = 0.015 * randn();
   vel[i * 3 + 1] = -0.25;
   vel[i * 3 + 2] = forwardSpeed + 0.02 * randn();
@@ -126,9 +139,11 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const theta = Math.atan2(rz, rx);
   const bladeStep = (2 * Math.PI) / bladeCount;
 
+  // snap to nearest blade, then jitter slightly to avoid “laser jets”
   const rel = wrapToPi(theta - discAngle);
   const k = Math.round(rel / bladeStep);
-  const bladeTheta = discAngle + k * bladeStep;
+  let bladeTheta = discAngle + k * bladeStep;
+  bladeTheta += (Math.random() - 0.5) * bladeJitter;
 
   const tx = -Math.sin(bladeTheta);
   const tz = Math.cos(bladeTheta);
@@ -138,21 +153,21 @@ function bladeKick(i, discX, discAngle, omega, meanSpeed, speedStd) {
   const speed = Math.max(3.0, meanSpeed + randn() * speedStd);
   const rimSpeed = Math.abs(omega) * r;
 
-  const tangential = 1.15 * speed + 0.45 * rimSpeed;
-  const radial = 0.90 * speed;
+  const tangential = 1.10 * speed + 0.45 * rimSpeed;
+  const radial = 0.85 * speed;
 
-  // velocities relative to spreader
+  // relative to spreader
   let vxRel = tangential * tx + radial * ux;
   let vzRel = tangential * tz + radial * uz;
 
-  // outward bias (twin-disc)
+  // outward twin-disc bias
   const outward = discX < 0 ? -1 : +1;
-  vxRel += outward * (0.55 * speed);
+  vxRel += outward * (outwardFactor * speed);
 
-  // behind the machine (relative)
-  vzRel -= 0.18 * speed;
+  // behind the machine
+  vzRel -= behindFactor * speed;
 
-  // convert to world velocities: add machine forward speed
+  // convert to world velocity: add machine forward speed
   vel[i * 3] = vxRel * (0.90 + 0.20 * Math.random());
   vel[i * 3 + 1] = 2.0 + Math.random() * 0.9;
   vel[i * 3 + 2] = (vzRel * (0.90 + 0.20 * Math.random())) + forwardSpeed;
@@ -249,6 +264,7 @@ function init() {
 
   scene.add(discL, discR);
 
+  // orifices on inner side (toward center)
   orificeMeshL = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
   orificeMeshR = makeOrificeMesh(orificeW, orificeLen, 0.05, 0x0f172a);
 
@@ -257,6 +273,7 @@ function init() {
 
   scene.add(orificeMeshL, orificeMeshR);
 
+  // S divider at center between feeds
   sDivider = makeSDivider(0.18, 0x111827);
   sDivider.position.set(0, feedY + 0.03, 0);
   scene.add(sDivider);
@@ -311,12 +328,13 @@ function animate() {
   orificeMeshR.position.z = spreaderZ;
   sDivider.position.z = spreaderZ;
 
+  // camera behind, looking forward
   if (cameraFollow) {
     camera.position.set(0, camHeight, spreaderZ - camBack);
     camera.lookAt(0, 1, spreaderZ + camLookAhead);
   }
 
-  // rotate discs
+  // disc rotation
   const omega = (rpm * 2 * Math.PI) / 60;
   discL.rotation.y += omega * dt;
   discR.rotation.y -= omega * dt;
@@ -342,18 +360,15 @@ function animate() {
     spawnFalling(i, p.x, feedY, p.z);
   }
 
-  // speed model
   const meanSpeed = 9 + (rpm / 1200) * 18;
   const speedStd = 0.22 * meanSpeed;
 
-  // physics
   const g = -9.81;
   const drag = 0.012;
 
   for (let i = 0; i < MAX; i++) {
     if (!alive[i]) continue;
 
-    // integrate
     vel[i * 3 + 1] += g * dt;
 
     vel[i * 3] *= (1 - drag);
@@ -364,7 +379,7 @@ function animate() {
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
-    // pickup zone (now particles stay aligned with discs)
+    // pickup zone
     if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
       pos[i * 3 + 1] = discY + 0.02;
 
