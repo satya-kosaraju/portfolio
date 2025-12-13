@@ -1,4 +1,5 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
 console.log("WEBDEM v1.10 (slip->blade hit->eject->land pattern)");
 
@@ -272,6 +273,25 @@ function init() {
   camera.position.set(0, 9.0, -17.0);
   camera.lookAt(0, 1, 0);
 
+  // --- EDEM-like navigation (mouse rotate/pan/zoom) ---
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+controls.enablePan = true;
+controls.panSpeed = 0.8;
+
+controls.minDistance = 3;
+controls.maxDistance = 80;
+
+controls.maxPolarAngle = Math.PI * 0.49; // prevent going under the ground
+controls.target.set(0, 1.0, 0);
+controls.update();
+
+// Make controls accessible in animate()
+window.__controls = controls;
+
+
   scene.add(new THREE.HemisphereLight(0xffffff, 0x020617, 1.0));
   const sun = new THREE.DirectionalLight(0xffffff, 1.0);
   sun.position.set(8, 14, 6);
@@ -468,6 +488,7 @@ function animate() {
   }
 
   particlesMesh.instanceMatrix.needsUpdate = true;
+  if (controls) controls.update();
   renderer.render(scene, camera);
 }
 
