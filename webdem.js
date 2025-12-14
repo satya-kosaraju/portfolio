@@ -1,15 +1,16 @@
 import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/DRACOLoader.js";
 
 console.log("WEBDEM (twin-disc + CAD) loaded");
 
 // ===== DOM =====
-const canvas  = document.getElementById("webdem-canvas");
-const rpmEl   = document.getElementById("rpm");
-const ppsEl   = document.getElementById("pps");
-const rpmVal  = document.getElementById("rpmVal");
-const ppsVal  = document.getElementById("ppsVal");
+const canvas   = document.getElementById("webdem-canvas");
+const rpmEl    = document.getElementById("rpm");
+const ppsEl    = document.getElementById("pps");
+const rpmVal   = document.getElementById("rpmVal");
+const ppsVal   = document.getElementById("ppsVal");
 const resetBtn = document.getElementById("resetSim");
 
 let rpm = rpmEl ? +rpmEl.value : 650;
@@ -21,32 +22,28 @@ if (ppsVal) ppsVal.textContent = pps;
 if (rpmEl) rpmEl.oninput = () => (rpmVal.textContent = (rpm = +rpmEl.value));
 if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
 
-// ===== CAD model settings =====
-const CAD_PATH = "spreader.glb";      // <<== your file name here
-const CAD_SCALE = 0.0018;             // <<== tweak this if model is too big/small
-const CAD_OFFSET_Y = 0.0;             // <<== tweak vertical position
-const CAD_OFFSET_Z = 0.0;             // <<== tweak front/back position
+// ===== CAD model settings (EDIT HERE if needed) =====
+const CAD_PATH     = "spreader.glb";  // file in same folder as webdem.html
+const CAD_SCALE    = 0.0018;          // try 0.001 – 0.01 if you don't see it
+const CAD_OFFSET_Y = 0.0;             // vertical move
+const CAD_OFFSET_Z = 0.0;             // forward/back
 
 let spreaderModel = null;
 
 // ===== DEM-ish parameters =====
-const discY = 0.60;
-const discRadius = 0.95;
-
-// distance = ±0.95  => left = -0.95, right = +0.95
-const discHalfSpacing = 0.95;
+const discY       = 0.60;
+const discRadius  = 0.95;
+const discHalfSpacing = 0.95;         // ±0.95 m
 const leftX  = -discHalfSpacing;
 const rightX = +discHalfSpacing;
 
-const bladeCount    = 4;
-const feedY         = discY + 0.55;
+const bladeCount   = 4;
+const feedY        = discY + 0.55;
 
-// orifice rectangles (inner side)
-const innerOffset = Math.min(0.48, discRadius - 0.18);
-const orificeW    = 0.22;
-const orificeL    = 0.34;
+const innerOffset  = Math.min(0.48, discRadius - 0.18);
+const orificeW     = 0.22;
+const orificeL     = 0.34;
 
-// motion tuning
 const g            = -9.81;
 const linDrag      = 0.06;
 const pickupWindow = 0.12;
@@ -60,18 +57,16 @@ const bladePitchDeg = 32;
 const throwUpDeg    = 14;
 const jitterDeg     = 6;
 
-// rear-only fan (block 360°)
 const rearDeflector = true;
 const behindConeDeg = 55;
 
-// particles
 const MAX = 60000;
 
-// states: 0=falling, 2=on-disc, 1=flying, 3=landed
-const pos   = new Float32Array(MAX * 3);
-const vel   = new Float32Array(MAX * 3);
-const alive = new Uint8Array(MAX);
-const state = new Uint8Array(MAX);
+// states: 0 falling, 2 on-disc, 1 flying, 3 landed
+const pos    = new Float32Array(MAX * 3);
+const vel    = new Float32Array(MAX * 3);
+const alive  = new Uint8Array(MAX);
+const state  = new Uint8Array(MAX);
 const discId = new Int8Array(MAX);
 
 const rOn    = new Float32Array(MAX);
@@ -125,14 +120,14 @@ function setInstance(i, x, y, z) {
 function resetSim() {
   alive.fill(0);
   state.fill(0);
-  cursor = 0;
+  cursor  = 0;
   emitAcc = 0;
   for (let i = 0; i < MAX; i++) hideInstance(i);
   particlesMesh.instanceMatrix.needsUpdate = true;
   console.log("Simulation reset");
 }
 
-// ---------- visual discs (simple) ----------
+// ---------- visual discs ----------
 function addBlades(disc, color) {
   const group = new THREE.Group();
   const geo   = new THREE.BoxGeometry(0.70, 0.06, 0.12);
@@ -167,13 +162,12 @@ function beginOnDisc(i, whichDisc, discX, omegaDisc) {
   discId[i] = whichDisc;
 
   const dx = pos[i * 3]     - discX;
-  const dz = pos[i * 3 + 2] - 0.0;
+  const dz = pos[i * 3 + 2];
 
   rOn[i]   = Math.min(Math.max(0.15, Math.hypot(dx, dz)), discRadius - 0.03);
   phiOn[i] = Math.atan2(dz, dx);
 
-  // slip: start slower than disc
-  phiDot[i] = omegaDisc * 0.25;
+  phiDot[i] = omegaDisc * 0.25;        // slip
 
   pos[i * 3 + 1] = discY + 0.02;
   vel[i * 3] = vel[i * 3 + 1] = vel[i * 3 + 2] = 0;
@@ -221,12 +215,10 @@ function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
   let vx = dirx * kick;
   let vz = dirz * kick;
 
-  // tiny outward bias per disc
   const outward = discX < 0 ? -1 : +1;
   vx += outward * (0.18 * kick);
 
   if (rearDeflector) vz = -Math.abs(vz);
-
   if (behindConeDeg < 90) {
     const cl = clampBehindCone(vx, vz, behindConeDeg);
     vx = cl.vx;
@@ -245,14 +237,21 @@ function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
 
 // ---------- CAD loader ----------
 function loadSpreaderModel() {
-  const loader = new GLTFLoader();
+  console.log("Trying to load CAD from:", CAD_PATH);
+
+  const loader      = new GLTFLoader();
+  const dracoLoader = new DRACOLoader();
+
+  // Public Draco decoders hosted by Google
+  dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
+  loader.setDRACOLoader(dracoLoader);
+
   loader.load(
     CAD_PATH,
     (gltf) => {
       spreaderModel = gltf.scene;
 
-      // Nice-ish default materials & shadows
-      spreaderModel.traverse(obj => {
+      spreaderModel.traverse((obj) => {
         if (obj.isMesh) {
           obj.castShadow = true;
           obj.receiveShadow = true;
@@ -263,24 +262,26 @@ function loadSpreaderModel() {
         }
       });
 
-      // <<< TWEAK SCALE / POSITION HERE TO ALIGN WITH PARTICLES >>>
+      // >>>> adjust these 3 lines to align with discs
       spreaderModel.scale.set(CAD_SCALE, CAD_SCALE, CAD_SCALE);
       spreaderModel.position.set(0, CAD_OFFSET_Y, CAD_OFFSET_Z);
-      // rotate if needed, e.g.:
-      // spreaderModel.rotation.y = Math.PI;   // turn 180°
+      // if needed: turn around
+      // spreaderModel.rotation.y = Math.PI;
 
       scene.add(spreaderModel);
 
-      // hide simple mock hopper & discs once CAD is visible
-      if (hopperSimple) hopperSimple.visible = false;
-      if (discL) discL.visible = false;
-      if (discR) discR.visible = false;
-
       console.log("CAD loaded OK:", CAD_PATH);
     },
-    undefined,
+    (xhr) => {
+      if (xhr.total) {
+        const pct = (xhr.loaded / xhr.total) * 100;
+        console.log(`CAD loading ${CAD_PATH}: ${pct.toFixed(1)}%`);
+      } else {
+        console.log(`CAD loading ${CAD_PATH}: ${xhr.loaded} bytes`);
+      }
+    },
     (err) => {
-      console.error("Failed to load CAD", err);
+      console.error("CAD GLB load error:", err);
     }
   );
 }
@@ -314,7 +315,7 @@ function init() {
   sun.position.set(8, 14, 6);
   scene.add(sun);
 
-  // ground
+  // ground plane
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(300, 300),
     new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.95 })
@@ -322,7 +323,7 @@ function init() {
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
-  // simple hopper (hidden later when CAD loads)
+  // simple hopper + discs (still used for alignment)
   hopperSimple = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 1.5, 2.0),
     new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
@@ -330,7 +331,6 @@ function init() {
   hopperSimple.position.set(0, 2.35, 0);
   scene.add(hopperSimple);
 
-  // simple discs (also hidden once CAD is in)
   const discGeo = new THREE.CylinderGeometry(discRadius, discRadius, 0.15, 48);
   discL = new THREE.Mesh(
     discGeo,
@@ -346,11 +346,11 @@ function init() {
   addBlades(discR, 0x7dd3fc);
   scene.add(discL, discR);
 
-  // orifice visuals
+  // orifices
   const orMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.55 });
   const orGeo = new THREE.BoxGeometry(orificeW, 0.05, orificeL);
-  const orL = new THREE.Mesh(orGeo, orMat);
-  const orR = new THREE.Mesh(orGeo, orMat);
+  const orL   = new THREE.Mesh(orGeo, orMat);
+  const orR   = new THREE.Mesh(orGeo, orMat);
   orL.position.set(leftX  + innerOffset, feedY, 0);
   orR.position.set(rightX - innerOffset, feedY, 0);
   scene.add(orL, orR);
@@ -370,7 +370,7 @@ function init() {
 
   if (resetBtn) resetBtn.onclick = resetSim;
 
-  // load CAD
+  // finally load CAD model
   loadSpreaderModel();
 
   resize();
@@ -401,7 +401,7 @@ function animate() {
   discL.rotation.y += omegaL * dt;
   discR.rotation.y += omegaR * dt;
 
-  // continuous emission using accumulator
+  // emission with accumulator (smooth)
   emitAcc += pps * dt;
   while (emitAcc >= 1) {
     emitAcc -= 1;
@@ -409,8 +409,8 @@ function animate() {
     cursor = (cursor + 1) % MAX;
 
     const left = Math.random() < 0.5;
-    const cx = left ? (leftX + innerOffset) : (rightX - innerOffset);
-    const p  = sampleRect(cx, 0, orificeW, orificeL);
+    const cx   = left ? (leftX + innerOffset) : (rightX - innerOffset);
+    const p    = sampleRect(cx, 0, orificeW, orificeL);
     spawnFalling(i, p.x, feedY, p.z);
   }
 
@@ -432,11 +432,9 @@ function animate() {
       const discAngle = which === 0 ? discL.rotation.y : discR.rotation.y;
       const omegaDisc = which === 0 ? omegaL : omegaR;
 
-      // slip -> ramp to ω
       phiDot[i] += (omegaDisc - phiDot[i]) * (angFric * dt);
       phiOn[i]  += phiDot[i] * dt;
 
-      // radial drift
       rOn[i] = Math.min(discRadius - 0.02, rOn[i] + radialDrift * dt);
 
       pos[i * 3]     = discX + rOn[i] * Math.cos(phiOn[i]);
@@ -459,7 +457,7 @@ function animate() {
       continue;
     }
 
-    // falling / flying integration
+    // falling / flying
     vel[i * 3 + 1] += g * dt;
 
     const damp = Math.exp(-linDrag * dt);
@@ -467,9 +465,9 @@ function animate() {
     vel[i * 3 + 1] *= damp;
     vel[i * 3 + 2] *= damp;
 
-    pos[i * 3]     += vel[i * 3] * dt;
-    pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
-    pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
+    pos[i * 3]     += vel[i * 3];
+    pos[i * 3 + 1] += vel[i * 3 + 1];
+    pos[i * 3 + 2] += vel[i * 3 + 2];
 
     // pickup
     if (state[i] === 0 && pos[i * 3 + 1] <= discY + pickupWindow) {
@@ -485,7 +483,7 @@ function animate() {
       }
     }
 
-    // land
+    // ground contact
     if (pos[i * 3 + 1] <= 0.02) {
       pos[i * 3 + 1] = 0.02;
       vel[i * 3] = vel[i * 3 + 1] = vel[i * 3 + 2] = 0;
@@ -497,7 +495,6 @@ function animate() {
 
   particlesMesh.instanceMatrix.needsUpdate = true;
   if (controls) controls.update();
-
   renderer.render(scene, camera);
 }
 
