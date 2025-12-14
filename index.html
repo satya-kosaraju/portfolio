@@ -242,27 +242,20 @@
   <!-- Interactive DEM-like Simulation (iframe) -->
 <!-- Interactive DEM-like Simulation (button opens new page) -->
 <section class="section">
-  <div class="section-header" data-aos="fade-up">
+  <div class="section-header">
     <h2>Interactive DEM-like Simulation</h2>
-    <p>WebGL twin-disc visualization (opens in a new page).</p>
+    <p>WebGL twin-disc visualization.</p>
   </div>
 
-  <div style="max-width:1100px;margin:0 auto;text-align:center;" data-aos="zoom-in">
-    <a
-      href="webdem_single.html"
-      target="_blank"
-      rel="noopener"
-      class="btn-nav"
-      style="display:inline-block;padding:14px 22px;border-radius:14px;font-weight:600;"
-    >
-      ▶ Run Simulation
-    </a>
-
-    <div style="margin-top:10px;color:rgba(230,238,255,.65);font-size:14px;">
-      Tip: Use mouse to rotate / pan / zoom (EDEM-like).
-    </div>
+  <div style="max-width:1100px;margin:0 auto;">
+    <iframe
+      src="webdem.html"   <!-- IMPORTANT: webdem.html -->
+      style="width:100%;height:720px;border:0;border-radius:24px;overflow:hidden;"
+      loading="lazy"
+    ></iframe>
   </div>
 </section>
+
 
   <!-- Projects -->
   <section id="projects" class="section">
