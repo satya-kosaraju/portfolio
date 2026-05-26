@@ -1,39 +1,76 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WEBDEM – Twin Disc | Satya Kosaraju</title>
-  <meta name="description" content="Interactive WebGL twin-disc fertilizer spreader simulation by Satya Kosaraju." />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebDEM — Twin Disc Simulation · Satya Kosaraju</title>
+  <meta name="description" content="Interactive WebGL twin spinning-disc fertilizer spreader simulation by Satya Kosaraju." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ctext x='50%25' y='56%25' font-family='Georgia,serif' font-style='italic' font-size='30' font-weight='600' fill='%23020617' text-anchor='middle' dominant-baseline='middle'%3Esk%3C/text%3E%3C/svg%3E" />
+
   <link rel="stylesheet" href="webdem.css" />
 </head>
 <body>
-  <main class="webdem-wrap">
-    <header class="webdem-head">
-      <a href="index.html" class="back-link">← Back to portfolio</a>
-      <h1>Interactive Web Simulation (DEM-like)</h1>
-      <p>Mouse like EDEM: <b>Left-drag rotate</b>, <b>Right-drag pan</b>, <b>Wheel zoom</b>.</p>
-    </header>
+  <header class="wd-head">
+    <a href="index.html" class="wd-back">← Back to portfolio</a>
+    <div class="wd-title-block">
+      <div class="wd-eyebrow">Interactive · WebGL</div>
+      <h1 class="wd-title">Twin-Disc DEM Simulation</h1>
+      <p class="wd-sub">
+        Particles fall onto two spinning discs, get flung outward by the blades.
+        Adjust <strong>RPM</strong> and <strong>flow rate</strong> to watch the spread pattern change.
+        Mouse: <strong>left-drag rotate</strong> · <strong>right-drag pan</strong> · <strong>wheel zoom</strong>.
+      </p>
+    </div>
+  </header>
 
-    <section class="webdem-stage">
+  <main class="wd-main">
+    <div class="wd-stage">
       <canvas id="webdem-canvas"></canvas>
 
-      <div class="hud">
-        <div class="hud-row">
-          <div class="hud-label">SPINNER RPM</div>
-          <div class="hud-val" id="rpmVal">650</div>
-        </div>
-        <input id="rpm" type="range" min="0" max="900" value="650" />
-
-        <div class="hud-row" style="margin-top:12px">
-          <div class="hud-label">FLOW RATE (PARTICLES/SEC)</div>
-          <div class="hud-val" id="ppsVal">1200</div>
-        </div>
-        <input id="pps" type="range" min="0" max="3000" value="1200" />
-
-        <button id="resetSim" class="hud-btn">Reset</button>
+      <div class="wd-loading" id="wdLoading">
+        <div class="wd-spinner"></div>
+        <div class="wd-loading-text">Initializing scene…</div>
       </div>
-    </section>
+
+      <div class="wd-hud">
+        <div class="wd-hud-block">
+          <div class="wd-hud-label">
+            <span>Spinner RPM</span>
+            <span class="wd-hud-val" id="rpmVal">650</span>
+          </div>
+          <input id="rpm" type="range" min="0" max="900" value="650" />
+        </div>
+
+        <div class="wd-hud-block">
+          <div class="wd-hud-label">
+            <span>Flow rate <span class="wd-hud-unit">(particles/sec)</span></span>
+            <span class="wd-hud-val" id="ppsVal">1200</span>
+          </div>
+          <input id="pps" type="range" min="0" max="3000" value="1200" />
+        </div>
+
+        <button id="resetSim" class="wd-btn">Reset particles</button>
+      </div>
+
+      <div class="wd-stats" id="wdStats">
+        <div><span class="wd-stats-k">Active</span><span class="wd-stats-v" id="statActive">0</span></div>
+        <div><span class="wd-stats-k">Landed</span><span class="wd-stats-v" id="statLanded">0</span></div>
+        <div><span class="wd-stats-k">FPS</span><span class="wd-stats-v" id="statFps">0</span></div>
+      </div>
+    </div>
+
+    <div class="wd-legend">
+      <span class="wd-dot wd-dot-blue"></span>Falling particle
+      <span class="wd-divider"></span>
+      <span class="wd-dot wd-dot-bright"></span>Flying (post-blade)
+      <span class="wd-divider"></span>
+      <span class="wd-dot wd-dot-dim"></span>Landed
+    </div>
   </main>
 
   <script type="module" src="webdem.js"></script>
