@@ -2,14 +2,14 @@ import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
 
-console.log("WEBDEM v1.20 (twin-disc + CAD)");
+console.log("WEBDEM v1.21 (twin-disc + CAD, bugfix)");
 
 // ===== DOM =====
-const canvas = document.getElementById("webdem-canvas");
-const rpmEl = document.getElementById("rpm");
-const ppsEl = document.getElementById("pps");
-const rpmVal = document.getElementById("rpmVal");
-const ppsVal = document.getElementById("ppsVal");
+const canvas  = document.getElementById("webdem-canvas");
+const rpmEl   = document.getElementById("rpm");
+const ppsEl   = document.getElementById("pps");
+const rpmVal  = document.getElementById("rpmVal");
+const ppsVal  = document.getElementById("ppsVal");
 const resetBtn = document.getElementById("resetSim");
 
 let rpm = rpmEl ? +rpmEl.value : 650;
@@ -25,20 +25,17 @@ if (ppsEl) ppsEl.oninput = () => (ppsVal.textContent = (pps = +ppsEl.value));
 const discY = 0.60;
 const discRadius = 0.95;
 
-// distance = ±0.95  => left = -0.95, right = +0.95
 const discHalfSpacing = 0.95;
-const leftX = -discHalfSpacing;
+const leftX  = -discHalfSpacing;
 const rightX = +discHalfSpacing;
 
 const bladeCount = 4;
 const feedY = discY + 0.55;
 
-// orifice rectangles (inner side)
 const innerOffset = Math.min(0.48, discRadius - 0.18);
 const orificeW = 0.22;
 const orificeL = 0.34;
 
-// motion tuning
 const g = -9.81;
 const linDrag = 0.06;
 const pickupWindow = 0.12;
@@ -52,21 +49,19 @@ const bladePitchDeg = 32;
 const throwUpDeg = 14;
 const jitterDeg = 6;
 
-// rear-only fan (prevents 360° spread)
 const rearDeflector = true;
 const behindConeDeg = 55;
 
-// particles
 const MAX = 60000;
 
 // states: 0 falling, 2 on-disc, 1 flying, 3 landed
-const pos = new Float32Array(MAX * 3);
-const vel = new Float32Array(MAX * 3);
+const pos   = new Float32Array(MAX * 3);
+const vel   = new Float32Array(MAX * 3);
 const alive = new Uint8Array(MAX);
 const state = new Uint8Array(MAX);
 const discId = new Int8Array(MAX);
 
-const rOn = new Float32Array(MAX);
+const rOn   = new Float32Array(MAX);
 const phiOn = new Float32Array(MAX);
 const phiDot = new Float32Array(MAX);
 
@@ -76,12 +71,12 @@ let emitAcc = 0;
 // ===== Three.js globals =====
 let renderer, scene, camera, clock, controls;
 let discL, discR, particlesMesh;
-let hopperBlock;         // simple box hopper (fallback)
-let spreaderModel = null; // loaded CAD assembly
+let hopperBlock;
+let spreaderModel = null;
 
 const tmp = new THREE.Object3D();
 
-// ---- helpers ----
+// ===== helpers =====
 function randn() {
   let u = 0, v = 0;
   while (!u) u = Math.random();
@@ -145,11 +140,11 @@ function spawnFalling(i, x, y, z) {
   alive[i] = 1;
   state[i] = 0;
 
-  pos[i * 3] = x;
+  pos[i * 3]     = x;
   pos[i * 3 + 1] = y;
   pos[i * 3 + 2] = z;
 
-  vel[i * 3] = 0.06 * randn();
+  vel[i * 3]     = 0.06 * randn();
   vel[i * 3 + 1] = -0.25;
   vel[i * 3 + 2] = 0.06 * randn();
 }
@@ -161,13 +156,8 @@ function beginOnDisc(i, whichDisc, discX, omegaDisc) {
   const dx = pos[i * 3] - discX;
   const dz = pos[i * 3 + 2];
 
-  rOn[i] = Math.min(
-    Math.max(0.15, Math.hypot(dx, dz)),
-    discRadius - 0.03
-  );
+  rOn[i] = Math.min(Math.max(0.15, Math.hypot(dx, dz)), discRadius - 0.03);
   phiOn[i] = Math.atan2(dz, dx);
-
-  // start slower than disc (slip), then ramp
   phiDot[i] = omegaDisc * 0.25;
 
   pos[i * 3 + 1] = discY + 0.02;
@@ -182,11 +172,11 @@ function clampBehindCone(vx, vz, coneDeg) {
 
   // phi=0 => straight behind (-Z)
   let phi = Math.atan2(vx, -vz);
-  if (phi > cone) phi = cone;
+  if (phi >  cone) phi =  cone;
   if (phi < -cone) phi = -cone;
 
   return {
-    vx: mag * Math.sin(phi),
+    vx:  mag * Math.sin(phi),
     vz: -mag * Math.cos(phi),
   };
 }
@@ -218,7 +208,6 @@ function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
   let vx = dirx * kick;
   let vz = dirz * kick;
 
-  // slight outward bias
   const outward = discX < 0 ? -1 : 1;
   vx += outward * (0.18 * kick);
 
@@ -233,7 +222,7 @@ function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
   const up = (throwUpDeg * Math.PI) / 180;
   const vy = Math.max(0.4, kick * Math.tan(up) + 0.15 * Math.random());
 
-  vel[i * 3] = vx;
+  vel[i * 3]     = vx;
   vel[i * 3 + 1] = vy;
   vel[i * 3 + 2] = vz;
 
@@ -244,7 +233,7 @@ function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
 function loadSpreaderCAD() {
   const loader = new GLTFLoader();
 
-  // 👉 if you rename the file, change this:
+  // NOTE: rename your file to "spreader.glb" (or change this path)
   const path = "spreader.glb";
 
   loader.load(
@@ -252,12 +241,12 @@ function loadSpreaderCAD() {
     (gltf) => {
       spreaderModel = gltf.scene;
 
-      // Tweak these three values to line the CAD up with the discs
-      const scale = 0.01;           // try 0.005–0.02 if size is off
+      // Tweak to line CAD up with the discs
+      const scale = 0.01;
       const offsetX = 0.0;
-      const offsetY = 0.15;         // lift or lower model
-      const offsetZ = 0.15;         // shift forward/back
-      const rotY = Math.PI;         // rotate around vertical
+      const offsetY = 0.15;
+      const offsetZ = 0.15;
+      const rotY = Math.PI;
 
       spreaderModel.scale.set(scale, scale, scale);
       spreaderModel.position.set(offsetX, offsetY, offsetZ);
@@ -286,11 +275,7 @@ function loadSpreaderCAD() {
 
 // ===== Init =====
 function init() {
-  renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-    alpha: true,
-  });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   scene = new THREE.Scene();
@@ -300,13 +285,12 @@ function init() {
   camera.position.set(0, 8.5, -15.5);
   camera.lookAt(0, discY, 0);
 
-  // OrbitControls: smoother + slower zoom
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.enablePan = true;
   controls.panSpeed = 0.7;
-  controls.zoomSpeed = 0.25;   // <<< zoom sensitivity here
+  controls.zoomSpeed = 0.25;
   controls.minDistance = 5;
   controls.maxDistance = 45;
   controls.maxPolarAngle = Math.PI * 0.47;
@@ -327,7 +311,7 @@ function init() {
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
-  // Simple hopper block (kept as backup even with CAD)
+  // Simple hopper block (fallback / always shown)
   hopperBlock = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 1.5, 2.0),
     new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
@@ -337,14 +321,8 @@ function init() {
 
   // Procedural discs (used for physics)
   const discGeo = new THREE.CylinderGeometry(discRadius, discRadius, 0.15, 48);
-  discL = new THREE.Mesh(
-    discGeo,
-    new THREE.MeshStandardMaterial({ color: 0x2563eb })
-  );
-  discR = new THREE.Mesh(
-    discGeo,
-    new THREE.MeshStandardMaterial({ color: 0x1d4ed8 })
-  );
+  discL = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x2563eb }));
+  discR = new THREE.Mesh(discGeo, new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
   discL.position.set(leftX, discY, 0);
   discR.position.set(rightX, discY, 0);
   addBlades(discL, 0x93c5fd);
@@ -364,8 +342,8 @@ function init() {
   for (let i = 0; i < MAX; i++) hideInstance(i);
   particlesMesh.instanceMatrix.needsUpdate = true;
 
-  // Load CAD spreader model
-  loadSpreaderModel();
+  // Load CAD spreader model (optional - non-fatal if file missing)
+  loadSpreaderCAD();
 
   if (resetBtn) resetBtn.onclick = resetSim;
 
@@ -382,69 +360,6 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 window.addEventListener("resize", resize);
-
-// ===== State transitions =====
-function clampBehindCone(vx, vz, coneDeg) {
-  const cone = (coneDeg * Math.PI) / 180;
-  const mag = Math.hypot(vx, vz) + 1e-9;
-
-  let phi = Math.atan2(vx, -vz); // 0 = straight behind
-  if (phi > cone) phi = cone;
-  if (phi < -cone) phi = -cone;
-
-  return {
-    vx: mag * Math.sin(phi),
-    vz: -mag * Math.cos(phi),
-  };
-}
-
-function eject(i, discX, discAngle, omegaDisc, r, bladeRel) {
-  state[i] = 1;
-
-  const jitter = (jitterDeg * Math.PI / 180) * (Math.random() - 0.5);
-  const bladeTheta = discAngle + bladeRel + jitter;
-
-  const ux = Math.cos(bladeTheta);
-  const uz = Math.sin(bladeTheta);
-
-  const sgn = omegaDisc >= 0 ? 1 : -1;
-  const tx = sgn * -Math.sin(bladeTheta);
-  const tz = sgn * Math.cos(bladeTheta);
-
-  const pitch = (bladePitchDeg * Math.PI) / 180;
-  let dirx = tx * Math.cos(pitch) + ux * Math.sin(pitch);
-  let dirz = tz * Math.cos(pitch) + uz * Math.sin(pitch);
-
-  const dmag = Math.hypot(dirx, dirz) + 1e-9;
-  dirx /= dmag;
-  dirz /= dmag;
-
-  const rim = Math.abs(omegaDisc) * r;
-  const kick = Math.max(1.0, 1.10 * rim + 0.18 * rim * randn());
-
-  let vx = dirx * kick;
-  let vz = dirz * kick;
-
-  const outward = discX < 0 ? -1 : +1;
-  vx += outward * (0.18 * kick);
-
-  if (rearDeflector) vz = -Math.abs(vz);
-
-  if (behindConeDeg > 0) {
-    const cl = clampBehindCone(vx, vz, behindConeDeg);
-    vx = cl.vx;
-    vz = cl.vz;
-  }
-
-  const up = (throwUpDeg * Math.PI) / 180;
-  const vy = Math.max(0.4, kick * Math.tan(up) + 0.15 * Math.random());
-
-  vel[i * 3] = vx;
-  vel[i * 3 + 1] = vy;
-  vel[i * 3 + 2] = vz;
-
-  pos[i * 3 + 1] = discY + 0.03;
-}
 
 // ===== Main loop =====
 function animate() {
@@ -491,7 +406,6 @@ function animate() {
       const discAngle = which === 0 ? discL.rotation.y : discR.rotation.y;
       const omegaDisc = which === 0 ? omegaL : omegaR;
 
-      // slip → match disc ω
       phiDot[i] += (omegaDisc - phiDot[i]) * (angFric * dt);
       phiOn[i] += phiDot[i] * dt;
 
@@ -523,7 +437,7 @@ function animate() {
     vel[i * 3 + 1] *= damp;
     vel[i * 3 + 2] *= damp;
 
-    pos[i * 3]     += vel[i * 3] * dt;
+    pos[i * 3]     += vel[i * 3]     * dt;
     pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
     pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
 
