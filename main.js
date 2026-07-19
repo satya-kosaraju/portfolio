@@ -54,7 +54,7 @@
     const ctx = canvas.getContext("2d");
     let w = 0, h = 0, dpr = 1;
     const particles = [];
-    const MAX_P = 850;
+    const MAX_P = 900;
     const G = 520;                 // px/s²
     const OMEGA = 8.0;             // rad/s (real value shown in HUD)
     const disc = { x: 0, y: 0, rx: 0, ry: 0, angle: 0 };
@@ -82,14 +82,21 @@
     window.addEventListener("resize", resize, { passive: true });
 
     const spawn = () => {
-      const spread = disc.rx * 0.55;
+      // The material enters as a compact stream near the spinner hub.
+      // It only becomes wide after the rotating vanes accelerate it.
+      const spread = disc.rx * 0.18;
       particles.push({
         x: disc.x + (Math.random() * 2 - 1) * spread,
         y: -10 - Math.random() * 40,
-        vx: (Math.random() * 2 - 1) * 14,
+        vx: (Math.random() * 2 - 1) * 8,
         vy: 40 + Math.random() * 60,
         r: 1.1 + Math.random() * 1.5,
-        flung: false,
+        state: "feed",
+        phase: 0,
+        orbitR: 0,
+        releaseR: 0,
+        radialV: 0,
+        releaseAt: 0,
         life: 1
       });
     };
@@ -99,7 +106,7 @@
       disc.angle += OMEGA * dt;
 
       // steady feed
-      spawnAcc += dt * 90;
+      spawnAcc += dt * 105;
       while (spawnAcc >= 1 && particles.length < MAX_P) {
         spawn();
         spawnAcc -= 1;
@@ -108,25 +115,60 @@
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.vy += G * dt;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
+        if (p.state === "feed") {
+          p.vy += G * dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
 
-        // disc contact: within footprint, moving down, near disc plane
-        if (!p.flung && p.vy > 0) {
+          // Capture particles near the hub. A random blade phase represents
+          // the continuously changing contact point on the rotating disc.
           const dx = (p.x - disc.x) / disc.rx;
           const dy = (p.y - disc.y) / disc.ry;
-          if (dx * dx + dy * dy <= 1 && Math.abs(p.y - disc.y) < disc.ry + 6) {
-            const side = p.x >= disc.x ? 1 : -1;
-            const rr = Math.min(Math.abs(dx), 1);
-            const fling = 260 + 480 * rr + Math.random() * 120;
-            p.vx = side * fling * (0.75 + Math.random() * 0.35);
-            p.vy = -(90 + Math.random() * 130) * (0.5 + rr);
-            p.flung = true;
+          if (dx * dx + dy * dy <= 0.92 && p.y >= disc.y - disc.ry * 0.8) {
+            p.state = "disc";
+            p.phase = disc.angle + Math.random() * Math.PI * 2;
+            p.orbitR = disc.rx * (0.12 + Math.random() * 0.14);
+            p.releaseR = disc.rx * (0.72 + Math.random() * 0.24);
+            p.radialV = disc.rx * (2.2 + Math.random() * 1.2);
+            p.releaseAt = 0.055 + Math.random() * 0.16;
+            p.vx = 0;
+            p.vy = 0;
           }
-        }
+        } else if (p.state === "disc") {
+          // Travel with the vane while migrating outward. Showing this short
+          // residence time makes the motion read as spreading, not splitting.
+          p.phase += OMEGA * dt * (0.94 + Math.random() * 0.08);
+          p.orbitR += p.radialV * dt;
+          p.releaseAt -= dt;
 
-        if (p.flung) p.life -= dt * 0.35;
+          const perspective = disc.ry / disc.rx;
+          p.x = disc.x + Math.cos(p.phase) * p.orbitR;
+          p.y = disc.y + Math.sin(p.phase) * p.orbitR * perspective;
+
+          if (p.orbitR >= p.releaseR || p.releaseAt <= 0) {
+            const tangential = OMEGA * p.orbitR;
+            const radial = p.radialV * (0.7 + Math.random() * 0.35);
+
+            // Tangential + radial velocity gives a continuous broadcast fan.
+            // Small scatter represents particle-to-particle variation.
+            let vx = -Math.sin(p.phase) * tangential + Math.cos(p.phase) * radial;
+            let vy = (Math.cos(p.phase) * tangential + Math.sin(p.phase) * radial) * perspective;
+            const scatter = (Math.random() * 2 - 1) * 0.22;
+            const cs = Math.cos(scatter), sn = Math.sin(scatter);
+            const speedScale = 0.78 + Math.random() * 0.34;
+            p.vx = (vx * cs - vy * sn) * speedScale;
+            p.vy = (vx * sn + vy * cs) * speedScale - (35 + Math.random() * 70);
+            p.state = "flight";
+          }
+        } else {
+          p.vy += G * dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.life -= dt * 0.28;
+
+          // Gentle drag separates the ballistic arcs without forming hard jets.
+          p.vx *= Math.pow(0.992, dt * 60);
+        }
 
         if (p.y > h + 30 || p.x < -60 || p.x > w + 60 || p.life <= 0) {
           particles.splice(i, 1);
