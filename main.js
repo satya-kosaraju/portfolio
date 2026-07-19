@@ -1,29 +1,68 @@
-/* ==========================================
-   main.js
-   - Hero canvas particle simulation (DEM-themed)
-   - Scroll reveal via IntersectionObserver
-   - Animated number counters
-   - Mobile nav toggle
-   - Navbar scroll state
+/* ============================================================
+   SVK PORTFOLIO v3 — main.js
+   - Hero canvas: velocity-colored granular sim + live HUD readouts
+   - Intro sequence handled in CSS (.intro)
+   - Scroll reveals (IntersectionObserver, stagger, variants)
+   - Scramble-decode effect on eyebrows
+   - Animated counters
+   - Method timeline: scroll-linked line draw + step "lit" states
+   - Navbar state, mobile overlay menu, active link + rail sync
    - Scroll progress bar
-========================================== */
+   - Magnetic buttons + reticle cursor (fine pointers only)
+   - prefers-reduced-motion respected throughout
+   ============================================================ */
 
 (() => {
   "use strict";
 
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
   /* ------------------------------------------
-     Hero canvas — granular flow simulation
-     Particles fall from above, land on a rotating
-     disc, get flung outward, form a spread pattern.
+     Velocity colormap (slow → fast)
+     Matches --v0..--v4 in style.css
+  ------------------------------------------ */
+  const RAMP = [
+    [47, 107, 255],   // #2F6BFF
+    [25, 200, 230],   // #19C8E6
+    [143, 230, 73],   // #8FE649
+    [255, 212, 59],   // #FFD43B
+    [255, 122, 47]    // #FF7A2F
+  ];
+
+  const rampColor = (t) => {
+    const x = Math.min(Math.max(t, 0), 1) * (RAMP.length - 1);
+    const i = Math.min(Math.floor(x), RAMP.length - 2);
+    const f = x - i;
+    const a = RAMP[i], b = RAMP[i + 1];
+    const r = (a[0] + (b[0] - a[0]) * f) | 0;
+    const g = (a[1] + (b[1] - a[1]) * f) | 0;
+    const bl = (a[2] + (b[2] - a[2]) * f) | 0;
+    return `rgb(${r},${g},${bl})`;
+  };
+
+  /* ------------------------------------------
+     HERO SIM — particles fall onto a spinning
+     disc and get flung outward, colored by speed
   ------------------------------------------ */
   const canvas = document.getElementById("heroCanvas");
+  const hudParticles = document.getElementById("hudParticles");
+  const hudOmega = document.getElementById("hudOmega");
+  const hudTime = document.getElementById("hudTime");
+
   if (canvas && canvas.getContext) {
     const ctx = canvas.getContext("2d");
     let w = 0, h = 0, dpr = 1;
     const particles = [];
-    let disc = { x: 0, y: 0, r: 0, angle: 0, omega: 1.4 };
+    const MAX_P = 850;
+    const G = 520;                 // px/s²
+    const OMEGA = 8.0;             // rad/s (real value shown in HUD)
+    const disc = { x: 0, y: 0, rx: 0, ry: 0, angle: 0 };
+    let simT = 0;
     let lastT = performance.now();
-    let running = true;
+    let running = !document.hidden;
+    let spawnAcc = 0;
+    let hudAcc = 0;
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -33,315 +72,402 @@
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // Disc position: right-ish, mid-vertical, scaled to viewport
-      disc.x = w * 0.72;
-      disc.y = h * 0.55;
-      disc.r = Math.min(w * 0.11, 110);
+      const compact = w < 760;
+      disc.x = compact ? w * 0.5 : w * 0.72;
+      disc.y = compact ? h * 0.78 : h * 0.6;
+      disc.rx = Math.min(w * 0.13, 130);
+      disc.ry = disc.rx * 0.28;
     };
     resize();
     window.addEventListener("resize", resize, { passive: true });
 
-    // Pause animation when tab is hidden
-    document.addEventListener("visibilitychange", () => {
-      running = !document.hidden;
-      if (running) {
-        lastT = performance.now();
-        loop();
-      }
-    });
-
-    // Particle factory
-    const G = 480;          // gravity (px/s^2)
-    const SPAWN_PER_SEC = 80;
-    let spawnAcc = 0;
-
     const spawn = () => {
-      // emit just above the disc, slightly off-center to bias one side
-      const offsetX = (Math.random() - 0.5) * disc.r * 0.6;
+      const spread = disc.rx * 0.55;
       particles.push({
-        x: disc.x + offsetX,
-        y: -10,
-        vx: (Math.random() - 0.5) * 20,
-        vy: 40 + Math.random() * 40,
-        r: 1.2 + Math.random() * 1.4,
-        state: 0, // 0 falling, 1 on disc, 2 flying, 3 landed
-        landedAge: 0,
-        hue: Math.random() < 0.3 ? "warm" : "cool",
-        onAngle: 0,
-        onR: 0,
-        onSpeed: 0,
+        x: disc.x + (Math.random() * 2 - 1) * spread,
+        y: -10 - Math.random() * 40,
+        vx: (Math.random() * 2 - 1) * 14,
+        vy: 40 + Math.random() * 60,
+        r: 1.1 + Math.random() * 1.5,
+        flung: false,
+        life: 1
       });
     };
 
-    const groundY = () => h - 30;
+    const step = (dt) => {
+      simT += dt;
+      disc.angle += OMEGA * dt;
 
-    const update = (dt) => {
-      // rotate disc
-      disc.angle += disc.omega * dt;
-
-      // spawn
-      spawnAcc += SPAWN_PER_SEC * dt;
-      while (spawnAcc >= 1 && particles.length < 600) {
-        spawnAcc -= 1;
+      // steady feed
+      spawnAcc += dt * 90;
+      while (spawnAcc >= 1 && particles.length < MAX_P) {
         spawn();
+        spawnAcc -= 1;
       }
+      spawnAcc = Math.min(spawnAcc, 4);
 
-      const gy = groundY();
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-
-        // landed: gradually fade and remove oldest
-        if (p.state === 3) {
-          p.landedAge += dt;
-          if (p.landedAge > 4) particles.splice(i, 1);
-          continue;
-        }
-
-        // on-disc spinning
-        if (p.state === 1) {
-          // accelerate angular speed toward disc omega
-          p.onSpeed += (disc.omega * 1.4 - p.onSpeed) * 4 * dt;
-          p.onAngle += p.onSpeed * dt;
-          // radial drift outward
-          p.onR += 32 * dt;
-          p.x = disc.x + p.onR * Math.cos(p.onAngle);
-          p.y = disc.y + p.onR * Math.sin(p.onAngle) * 0.25; // squashed perspective
-
-          // eject when reaching rim
-          if (p.onR >= disc.r * 0.9) {
-            const tangent = p.onAngle + Math.PI / 2;
-            const speed = 220 + Math.random() * 90;
-            p.vx = Math.cos(tangent) * speed;
-            p.vy = Math.sin(tangent) * speed * 0.35 - 100; // upward kick
-            p.state = 2;
-          }
-          continue;
-        }
-
-        // falling / flying — physics
         p.vy += G * dt;
-        p.vx *= 1 - 0.05 * dt;
-        p.vy *= 1 - 0.02 * dt;
         p.x += p.vx * dt;
         p.y += p.vy * dt;
 
-        // pickup on disc
-        if (p.state === 0) {
-          const dx = p.x - disc.x;
-          const dy = p.y - disc.y;
-          const dist = Math.hypot(dx, dy * 4); // squashed perspective check
-          if (dist < disc.r * 0.85 && p.y >= disc.y - 6 && p.y <= disc.y + 14) {
-            p.state = 1;
-            p.onAngle = Math.atan2(dy, dx);
-            p.onR = Math.max(8, Math.hypot(dx, dy));
-            p.onSpeed = 0.6;
+        // disc contact: within footprint, moving down, near disc plane
+        if (!p.flung && p.vy > 0) {
+          const dx = (p.x - disc.x) / disc.rx;
+          const dy = (p.y - disc.y) / disc.ry;
+          if (dx * dx + dy * dy <= 1 && Math.abs(p.y - disc.y) < disc.ry + 6) {
+            const side = p.x >= disc.x ? 1 : -1;
+            const rr = Math.min(Math.abs(dx), 1);
+            const fling = 260 + 480 * rr + Math.random() * 120;
+            p.vx = side * fling * (0.75 + Math.random() * 0.35);
+            p.vy = -(90 + Math.random() * 130) * (0.5 + rr);
+            p.flung = true;
           }
         }
 
-        // landed on ground
-        if (p.y >= gy) {
-          p.y = gy;
-          p.vx = 0;
-          p.vy = 0;
-          p.state = 3;
-          p.landedAge = 0;
-        }
+        if (p.flung) p.life -= dt * 0.35;
 
-        // off-screen
-        if (p.x < -30 || p.x > w + 30 || p.y > h + 50) {
+        if (p.y > h + 30 || p.x < -60 || p.x > w + 60 || p.life <= 0) {
           particles.splice(i, 1);
         }
       }
     };
 
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h);
-
-      // Disc shadow ellipse
-      ctx.fillStyle = "rgba(107, 195, 255, 0.04)";
+    const drawDisc = () => {
+      // shaft
+      ctx.strokeStyle = "rgba(42,56,80,0.9)";
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.ellipse(disc.x, disc.y + 8, disc.r * 1.05, disc.r * 0.3, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Disc outline
-      ctx.strokeStyle = "rgba(107, 195, 255, 0.25)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.ellipse(disc.x, disc.y, disc.r, disc.r * 0.26, 0, 0, Math.PI * 2);
+      ctx.moveTo(disc.x, disc.y);
+      ctx.lineTo(disc.x, disc.y - disc.rx * 0.9);
       ctx.stroke();
 
-      // Disc center mark
-      ctx.fillStyle = "rgba(107, 195, 255, 0.4)";
+      // disc body
       ctx.beginPath();
-      ctx.arc(disc.x, disc.y, 2, 0, Math.PI * 2);
+      ctx.ellipse(disc.x, disc.y, disc.rx, disc.ry, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(16,23,36,0.92)";
       ctx.fill();
-
-      // Rotating blades (just visual indicators)
-      ctx.strokeStyle = "rgba(151, 218, 255, 0.4)";
+      ctx.strokeStyle = "rgba(42,56,80,1)";
       ctx.lineWidth = 1.5;
-      for (let b = 0; b < 4; b++) {
-        const a = disc.angle + (b * Math.PI / 2);
+      ctx.stroke();
+
+      // rotating vanes (projected)
+      ctx.strokeStyle = "rgba(25,200,230,0.55)";
+      ctx.lineWidth = 1.5;
+      for (let k = 0; k < 4; k++) {
+        const a = disc.angle + (k * Math.PI) / 2;
+        const ex = Math.cos(a) * disc.rx;
+        const ey = Math.sin(a) * disc.ry;
         ctx.beginPath();
         ctx.moveTo(disc.x, disc.y);
-        ctx.lineTo(
-          disc.x + Math.cos(a) * disc.r * 0.85,
-          disc.y + Math.sin(a) * disc.r * 0.85 * 0.26
-        );
+        ctx.lineTo(disc.x + ex, disc.y + ey);
         ctx.stroke();
       }
 
-      // Faint dimension line annotation
-      ctx.strokeStyle = "rgba(107, 195, 255, 0.15)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([2, 4]);
+      // hub
       ctx.beginPath();
-      ctx.moveTo(disc.x - disc.r, disc.y + disc.r * 0.32);
-      ctx.lineTo(disc.x + disc.r, disc.y + disc.r * 0.32);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.ellipse(disc.x, disc.y, disc.rx * 0.16, disc.ry * 0.16, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,122,47,0.9)";
+      ctx.fill();
+    };
 
-      // Particles
-      for (const p of particles) {
-        const isWarm = p.hue === "warm";
-        const isFlying = p.state === 2;
-        const alpha = p.state === 3 ? Math.max(0, 0.6 - p.landedAge * 0.15) : (isFlying ? 0.9 : 0.7);
+    const VMAX = 780; // speed mapped to hottest ramp color
+    const draw = () => {
+      // trail fade — matches --bg0
+      ctx.fillStyle = "rgba(6,9,13,0.28)";
+      ctx.fillRect(0, 0, w, h);
 
-        if (isWarm) {
-          ctx.fillStyle = `rgba(246, 226, 179, ${alpha})`;
-        } else if (isFlying) {
-          ctx.fillStyle = `rgba(151, 218, 255, ${alpha})`;
-        } else {
-          ctx.fillStyle = `rgba(107, 195, 255, ${alpha * 0.85})`;
-        }
+      drawDisc();
 
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const speed = Math.hypot(p.vx, p.vy);
+        ctx.globalAlpha = Math.max(p.life, 0) * 0.95;
+        ctx.fillStyle = rampColor(speed / VMAX);
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
-
-        // motion trail for flying
-        if (isFlying) {
-          ctx.strokeStyle = `rgba(151, 218, 255, ${alpha * 0.25})`;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.x - p.vx * 0.02, p.y - p.vy * 0.02);
-          ctx.stroke();
-        }
       }
+      ctx.globalAlpha = 1;
     };
 
-    const loop = (now = performance.now()) => {
+    const fmtTime = (t) => {
+      const m = Math.floor(t / 60);
+      const s = t - m * 60;
+      return `${String(m).padStart(2, "0")}:${s.toFixed(1).padStart(4, "0")}`;
+    };
+
+    const updateHud = () => {
+      if (hudParticles) hudParticles.textContent = String(particles.length).padStart(4, "0");
+      if (hudOmega) hudOmega.textContent = OMEGA.toFixed(1);
+      if (hudTime) hudTime.textContent = fmtTime(simT);
+    };
+
+    const loop = (now) => {
       if (!running) return;
-      let dt = (now - lastT) / 1000;
-      if (dt > 0.05) dt = 0.05;
+      const dt = Math.min((now - lastT) / 1000, 0.05);
       lastT = now;
-      update(dt);
+      step(dt);
       draw();
+      hudAcc += dt;
+      if (hudAcc > 0.15) { updateHud(); hudAcc = 0; }
       requestAnimationFrame(loop);
     };
 
-    // Respect prefers-reduced-motion
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      requestAnimationFrame(loop);
-    } else {
-      // Static frame
-      for (let i = 0; i < 30; i++) spawn();
-      update(2);
+    if (reduceMotion) {
+      // static frame: pre-run the sim silently, render once
+      ctx.fillStyle = "#06090d";
+      ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 600; i++) step(1 / 60);
       draw();
+      updateHud();
+    } else {
+      document.addEventListener("visibilitychange", () => {
+        running = !document.hidden;
+        if (running) {
+          lastT = performance.now();
+          requestAnimationFrame(loop);
+        }
+      });
+      requestAnimationFrame(loop);
     }
   }
 
   /* ------------------------------------------
-     Scroll reveal
+     Scroll progress bar
   ------------------------------------------ */
+  const progressBar = document.getElementById("progressBar");
+  const setProgress = () => {
+    if (!progressBar) return;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const p = max > 0 ? window.scrollY / max : 0;
+    progressBar.style.transform = `scaleX(${p})`;
+  };
+
+  /* ------------------------------------------
+     Navbar scrolled state
+  ------------------------------------------ */
+  const navbar = document.getElementById("navbar");
+  const setNavState = () => {
+    if (navbar) navbar.classList.toggle("scrolled", window.scrollY > 24);
+  };
+
+  /* ------------------------------------------
+     Mobile menu
+  ------------------------------------------ */
+  const navToggle = document.getElementById("navToggle");
+  const navLinks = document.getElementById("navLinks");
+  if (navToggle && navLinks) {
+    navToggle.addEventListener("click", () => {
+      const open = navLinks.classList.toggle("open");
+      navToggle.classList.toggle("open", open);
+      navToggle.setAttribute("aria-expanded", String(open));
+      document.body.style.overflow = open ? "hidden" : "";
+    });
+    navLinks.querySelectorAll("a").forEach((a) =>
+      a.addEventListener("click", () => {
+        navLinks.classList.remove("open");
+        navToggle.classList.remove("open");
+        navToggle.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = "";
+      })
+    );
+  }
+
+  /* ------------------------------------------
+     Scramble-decode effect
+  ------------------------------------------ */
+  const CHARS = "01▮▯/\\|=+*·<>";
+  const scramble = (el) => {
+    if (reduceMotion) return;
+    const original = el.dataset.original || el.textContent;
+    el.dataset.original = original;
+    const dur = 620;
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min((now - start) / dur, 1);
+      const solved = Math.floor(original.length * t);
+      let out = original.slice(0, solved);
+      for (let i = solved; i < original.length; i++) {
+        const c = original[i];
+        out += c === " " ? " " : CHARS[(Math.random() * CHARS.length) | 0];
+      }
+      el.textContent = out;
+      if (t < 1) requestAnimationFrame(tick);
+      else el.textContent = original;
+    };
+    requestAnimationFrame(tick);
+  };
+
+  /* ------------------------------------------
+     Counters
+  ------------------------------------------ */
+  const runCounter = (el) => {
+    const target = parseFloat(el.dataset.counter);
+    if (isNaN(target)) return;
+    if (reduceMotion) { el.textContent = String(target); return; }
+    const dur = 1300;
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min((now - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = String(Math.round(target * eased));
+      if (t < 1) requestAnimationFrame(tick);
+      else el.textContent = String(target);
+    };
+    requestAnimationFrame(tick);
+  };
+
+  /* ------------------------------------------
+     Reveal system (with stagger + per-element hooks)
+  ------------------------------------------ */
+  // stagger delays for children of [data-stagger]
+  document.querySelectorAll("[data-stagger]").forEach((wrap) => {
+    wrap.querySelectorAll(".reveal").forEach((el, i) => {
+      el.style.setProperty("--rd", `${i * 0.09}s`);
+    });
+  });
+
   const revealEls = document.querySelectorAll(".reveal");
-  if ("IntersectionObserver" in window && revealEls.length) {
+  if ("IntersectionObserver" in window && !reduceMotion) {
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            io.unobserve(entry.target);
-          }
+          if (!entry.isIntersecting) return;
+          const el = entry.target;
+          el.classList.add("in");
+          el.querySelectorAll("[data-scramble]").forEach(scramble);
+          if (el.matches("[data-scramble]")) scramble(el);
+          el.querySelectorAll("[data-counter]").forEach(runCounter);
+          io.unobserve(el);
         });
       },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.1 }
+      { threshold: 0.18, rootMargin: "0px 0px -6% 0px" }
     );
     revealEls.forEach((el) => io.observe(el));
   } else {
-    revealEls.forEach((el) => el.classList.add("visible"));
+    revealEls.forEach((el) => el.classList.add("in"));
+    document.querySelectorAll("[data-counter]").forEach((el) => {
+      el.textContent = el.dataset.counter;
+    });
   }
 
   /* ------------------------------------------
-     Animated counters
+     Active section → nav links + rail dots + label
   ------------------------------------------ */
-  const counters = document.querySelectorAll("[data-counter]");
-  if ("IntersectionObserver" in window && counters.length) {
-    const animateCounter = (el) => {
-      const target = parseInt(el.dataset.counter, 10);
-      if (isNaN(target)) return;
-      const duration = 1200;
-      const start = performance.now();
-      const tick = (now) => {
-        const t = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - t, 3);
-        el.textContent = Math.round(eased * target);
-        if (t < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    };
+  const sections = document.querySelectorAll("section[id]");
+  const navAnchors = document.querySelectorAll(".nav-links a[href^='#']");
+  const railDots = document.querySelectorAll(".rail-dot");
+  const railLabel = document.getElementById("railLabel");
 
-    const counterIO = new IntersectionObserver(
+  const setActive = (id, name) => {
+    navAnchors.forEach((a) =>
+      a.classList.toggle("active", a.getAttribute("href") === `#${id}`)
+    );
+    railDots.forEach((d) =>
+      d.classList.toggle("active", d.getAttribute("href") === `#${id}`)
+    );
+    if (railLabel && name) railLabel.textContent = name;
+  };
+
+  if ("IntersectionObserver" in window) {
+    const secIO = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            animateCounter(entry.target);
-            counterIO.unobserve(entry.target);
+            const el = entry.target;
+            setActive(el.id, el.dataset.name || el.id.toUpperCase());
           }
         });
       },
-      { threshold: 0.5 }
+      { rootMargin: "-42% 0px -50% 0px", threshold: 0 }
     );
-    counters.forEach((c) => counterIO.observe(c));
+    sections.forEach((s) => secIO.observe(s));
   }
 
   /* ------------------------------------------
-     Mobile nav
+     Method timeline — scroll-linked line + lit steps
   ------------------------------------------ */
-  const toggle = document.getElementById("navToggle");
-  const links = document.getElementById("navLinks");
-  if (toggle && links) {
-    const close = () => {
-      links.classList.remove("open");
-      toggle.classList.remove("open");
-      toggle.setAttribute("aria-expanded", "false");
-    };
-    toggle.addEventListener("click", () => {
-      const isOpen = links.classList.toggle("open");
-      toggle.classList.toggle("open", isOpen);
-      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  const methodWrap = document.getElementById("methodWrap");
+  const mSteps = methodWrap ? methodWrap.querySelectorAll(".m-step") : [];
+  const setMethodProgress = () => {
+    if (!methodWrap) return;
+    const rect = methodWrap.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const raw = (vh * 0.72 - rect.top) / rect.height;
+    const p = Math.min(Math.max(raw, 0), 1);
+    methodWrap.style.setProperty("--p", p.toFixed(4));
+    const litLine = rect.top + rect.height * p;
+    mSteps.forEach((s) => {
+      const sr = s.getBoundingClientRect();
+      s.classList.toggle("lit", sr.top + 24 <= litLine);
     });
-    links.querySelectorAll("a").forEach((a) => a.addEventListener("click", close));
-    document.addEventListener("click", (e) => {
-      if (!toggle.contains(e.target) && !links.contains(e.target)) close();
-    });
+  };
+  if (reduceMotion && methodWrap) {
+    methodWrap.style.setProperty("--p", "1");
+    mSteps.forEach((s) => s.classList.add("lit"));
   }
 
   /* ------------------------------------------
-     Navbar scrolled state + progress bar
+     Scroll handler (rAF-throttled)
   ------------------------------------------ */
-  const navbar = document.getElementById("navbar");
-  const progress = document.getElementById("progressBar");
+  let ticking = false;
   const onScroll = () => {
-    const y = window.scrollY;
-    if (navbar) navbar.classList.toggle("scrolled", y > 20);
-    if (progress) {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const pct = max > 0 ? (y / max) * 100 : 0;
-      progress.style.width = pct + "%";
-    }
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      setProgress();
+      setNavState();
+      if (!reduceMotion) setMethodProgress();
+      ticking = false;
+    });
   };
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
+
+  /* ------------------------------------------
+     Magnetic buttons (fine pointers only)
+  ------------------------------------------ */
+  if (finePointer && !reduceMotion) {
+    document.querySelectorAll("[data-magnetic]").forEach((btn) => {
+      const strength = 7;
+      btn.addEventListener("mousemove", (e) => {
+        const r = btn.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+        const dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+        btn.style.transform = `translate(${dx * strength}px, ${dy * strength}px)`;
+      });
+      btn.addEventListener("mouseleave", () => {
+        btn.style.transform = "";
+      });
+    });
+  }
+
+  /* ------------------------------------------
+     Reticle cursor (fine pointers only)
+  ------------------------------------------ */
+  const dot = document.getElementById("cursorDot");
+  const ring = document.getElementById("cursorRing");
+  if (dot && ring && finePointer && !reduceMotion) {
+    let mx = -100, my = -100, rx = -100, ry = -100;
+    window.addEventListener("mousemove", (e) => {
+      mx = e.clientX;
+      my = e.clientY;
+      dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+    }, { passive: true });
+
+    const follow = () => {
+      rx += (mx - rx) * 0.16;
+      ry += (my - ry) * 0.16;
+      ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+      requestAnimationFrame(follow);
+    };
+    requestAnimationFrame(follow);
+
+    const hotSel = "a, button, .project, .stat, .award, .stack-col";
+    document.addEventListener("mouseover", (e) => {
+      ring.classList.toggle("hot", !!e.target.closest(hotSel));
+    }, { passive: true });
+  }
 })();

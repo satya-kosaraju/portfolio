@@ -1,32 +1,359 @@
-# satya-kosaraju.github.io/portfolio
+/* ============================================================
+   WebDEM v3 — matches the main site's instrument-panel system
+   ============================================================ */
 
-Personal site of **Satya Venkatesh Kosaraju** — simulation engineer working on
-discrete element modeling (DEM) of granular fertilizer, calibration/validation
-methodology, and full-machine spreader simulation at Iowa State University's
-Soil Machine Dynamics Laboratory in collaboration with John Deere.
+:root {
+  --bg0: #06090d;
+  --bg1: #0a0f16;
+  --bg2: #101724;
+  --line: #1b2634;
+  --line2: #2a3850;
+  --ink: #e9eef4;
+  --mut: #8a97a6;
+  --dim: #5b6675;
+  --v0: #2f6bff;
+  --v1: #19c8e6;
+  --v2: #8fe649;
+  --v3: #ffd43b;
+  --v4: #ff7a2f;
+  --accent: var(--v4);
+  --accent-2: var(--v1);
+  --ramp: linear-gradient(90deg, var(--v0), var(--v1), var(--v2), var(--v3), var(--v4));
+  --font-display: "Archivo", "Arial Narrow", sans-serif;
+  --font-body: "Instrument Sans", "Helvetica Neue", sans-serif;
+  --font-mono: "Martian Mono", "SFMono-Regular", monospace;
+  --radius: 10px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-**Live:** https://satya-kosaraju.github.io/portfolio/
+*, *::before, *::after { box-sizing: border-box; }
 
-## Stack
+html, body { height: 100%; }
 
-- Static HTML / CSS / vanilla JS — no build step, no frameworks
-- Hero: Canvas 2D granular-flow simulation with velocity-colormap particle
-  coloring and live HUD telemetry
-- `webdem.html`: interactive WebGL twin-disc spreader simulation
-  (Three.js r160, **vendored locally in `/vendor`** — zero CDN dependencies)
-- Scroll-linked animations via IntersectionObserver + rAF;
-  `prefers-reduced-motion` fully respected
+body {
+  margin: 0;
+  background: var(--bg0);
+  color: var(--ink);
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 
-## Files
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+::selection { background: var(--v4); color: var(--bg0); }
 
-| File | Purpose |
-| --- | --- |
-| `index.html` / `style.css` / `main.js` | Main site |
-| `webdem.html` / `webdem.css` / `webdem.js` | Interactive twin-disc simulation |
-| `vendor/` | Vendored Three.js module + OrbitControls (keeps the sim CDN-free) |
-| `Satya_resume.pdf` | Résumé |
+.ramp-text {
+  background: var(--ramp);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
-## Deploy
+/* ------------------ header ------------------ */
+.wd-head {
+  padding: 1.4rem clamp(1.25rem, 4vw, 3rem) 1.1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg1);
+}
 
-Push to `main`; GitHub Pages serves the repo root. Hard-refresh
-(Ctrl/Cmd+Shift+R) after deploys — Pages caches aggressively.
+.wd-back {
+  display: inline-flex;
+  gap: 0.5em;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mut);
+  margin-bottom: 1rem;
+  transition: color 0.25s;
+}
+.wd-back:hover { color: var(--accent); }
+
+.wd-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.wd-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 118;
+  font-stretch: 118%;
+  font-weight: 760;
+  font-size: clamp(1.7rem, 4.5vw, 2.8rem);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.wd-sub {
+  margin: 0;
+  max-width: 52em;
+  color: var(--mut);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+.wd-sub strong { color: var(--ink); font-weight: 600; }
+
+.wd-kbd {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  color: var(--accent-2);
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  padding: 0.1em 0.4em;
+  background: var(--bg0);
+}
+
+/* ------------------ stage ------------------ */
+.wd-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.9rem, 2.5vw, 1.8rem);
+  gap: 0.9rem;
+}
+
+.wd-stage {
+  position: relative;
+  flex: 1;
+  min-height: 62vh;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  background: var(--bg1);
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+#webdem-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.wd-corner {
+  position: absolute;
+  width: 20px; height: 20px;
+  border: 1px solid var(--line2);
+  z-index: 5;
+  pointer-events: none;
+  margin: 10px;
+}
+.wd-corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.wd-corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.wd-corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.wd-corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+/* ------------------ loading ------------------ */
+.wd-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  background: rgba(6, 9, 13, 0.88);
+  backdrop-filter: blur(4px);
+  transition: opacity 0.45s var(--ease-out), visibility 0.45s;
+  text-align: center;
+  padding: 1.5rem;
+}
+.wd-loading.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.wd-spinner {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--line2);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.wd-loading-text {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  color: var(--mut);
+  line-height: 2;
+}
+.wd-loading-err {
+  color: var(--v3);
+  text-transform: none;
+  letter-spacing: 0.06em;
+  max-width: 40em;
+}
+
+/* ------------------ HUD controls ------------------ */
+.wd-hud {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: min(300px, calc(100% - 2rem));
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  background: rgba(10, 15, 22, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.wd-hud-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mut);
+  margin-bottom: 0.45rem;
+}
+.wd-hud-unit { color: var(--dim); }
+.wd-hud-val {
+  color: var(--accent-2);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.wd-hud input[type="range"] {
+  width: 100%;
+  height: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: linear-gradient(90deg, var(--line2), var(--line2));
+  border-radius: 4px;
+  outline-offset: 6px;
+  cursor: pointer;
+}
+.wd-hud input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg0);
+  box-shadow: 0 0 10px rgba(255, 122, 47, 0.5);
+  transition: transform 0.2s;
+}
+.wd-hud input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.wd-hud input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg0);
+  box-shadow: 0 0 10px rgba(255, 122, 47, 0.5);
+}
+.wd-hud input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: var(--line2);
+  border-radius: 4px;
+}
+
+.wd-btn {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.25s, color 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+.wd-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 6px 20px rgba(255, 122, 47, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ------------------ stats ------------------ */
+.wd-stats {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 6;
+  display: flex;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  background: rgba(10, 15, 22, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--font-mono);
+}
+.wd-stats > div { display: flex; flex-direction: column; gap: 0.15rem; }
+.wd-stats-k {
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  color: var(--dim);
+}
+.wd-stats-v {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  min-width: 3.5ch;
+}
+
+/* ------------------ legend ------------------ */
+.wd-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mut);
+  padding: 0.2rem 0.2rem 0.6rem;
+}
+.wd-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.wd-dot-cyan { background: var(--v1); box-shadow: 0 0 8px rgba(25, 200, 230, 0.6); }
+.wd-dot-lime { background: var(--v2); box-shadow: 0 0 8px rgba(143, 230, 73, 0.6); }
+.wd-dot-orange { background: var(--v4); box-shadow: 0 0 8px rgba(255, 122, 47, 0.6); }
+.wd-dot-dim { background: var(--dim); }
+.wd-divider {
+  width: 1px; height: 12px;
+  background: var(--line2);
+  margin: 0 0.3rem;
+}
+.wd-note { margin-left: auto; color: var(--dim); }
+
+/* ------------------ responsive ------------------ */
+@media (max-width: 640px) {
+  .wd-stats { top: auto; bottom: 1rem; right: 1rem; left: auto; }
+  .wd-hud { width: calc(100% - 2rem); bottom: 5.4rem; }
+  .wd-note { display: none; }
+  .wd-stage { min-height: 70vh; }
+}
+
+/* ------------------ reduced motion ------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .wd-spinner { animation-duration: 2s; }
+  * { transition-duration: 0.001s !important; }
+}

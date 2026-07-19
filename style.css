@@ -1,656 +1,1407 @@
-<!DOCTYPE html>
-<html lang="en" class="no-js">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>document.documentElement.classList.replace('no-js','js');</script>
+/* ============================================================
+   SVK PORTFOLIO v3 — "Instrument Panel"
+   Palette: deep graphite + velocity-colormap accent ramp
+   Type: Archivo (display, expanded) · Instrument Sans (body)
+         Martian Mono (HUD / data labels)
+   ============================================================ */
 
-  <title>Satya Venkatesh Kosaraju — Simulation Engineer · DEM &amp; Granular Flow</title>
+/* ------------------ tokens ------------------ */
+:root {
+  --bg0: #06090d;
+  --bg1: #0a0f16;
+  --bg2: #101724;
+  --line: #1b2634;
+  --line2: #2a3850;
 
-  <meta name="description" content="Simulation engineer specializing in discrete element modeling of granular materials. Calibration, multi-rig validation, and full-machine fertilizer spreader simulation. Iowa State University × John Deere." />
-  <meta name="author" content="Satya Venkatesh Kosaraju" />
+  --ink: #e9eef4;
+  --mut: #8a97a6;
+  --dim: #5b6675;
 
-  <meta property="og:title" content="Satya Venkatesh Kosaraju — Simulation Engineer · DEM" />
-  <meta property="og:description" content="Discrete element models calibrated on experiments, validated on independent rigs, and trusted to set the machine." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://satya-kosaraju.github.io/portfolio/" />
-  <!-- Take a screenshot of the hero, save as og-preview.png (1200×630) in this repo, then uncomment: -->
-  <!-- <meta property="og:image" content="https://satya-kosaraju.github.io/portfolio/og-preview.png" /> -->
-  <meta name="twitter:card" content="summary_large_image" />
+  /* velocity colormap — slow → fast */
+  --v0: #2f6bff;
+  --v1: #19c8e6;
+  --v2: #8fe649;
+  --v3: #ffd43b;
+  --v4: #ff7a2f;
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230A0F16'/%3E%3Ctext x='50%25' y='54%25' font-family='monospace' font-size='24' font-weight='700' fill='%23FF7A2F' text-anchor='middle' dominant-baseline='middle'%3E%5Bsk%5D%3C/text%3E%3C/svg%3E" />
+  --accent: var(--v4);
+  --accent-2: var(--v1);
+  --ramp: linear-gradient(90deg, var(--v0), var(--v1), var(--v2), var(--v3), var(--v4));
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&family=Instrument+Sans:ital,wght@0,400..700;1,400&family=Martian+Mono:wght@300..700&display=swap" rel="stylesheet">
+  --font-display: "Archivo", "Arial Narrow", sans-serif;
+  --font-body: "Instrument Sans", "Helvetica Neue", sans-serif;
+  --font-mono: "Martian Mono", "SFMono-Regular", monospace;
 
-  <link rel="stylesheet" href="style.css" />
-</head>
+  --maxw: 1180px;
+  --pad: clamp(1.25rem, 4vw, 3rem);
+  --radius: 10px;
 
-<body>
-  <a class="skip-link" href="#profile">Skip to content</a>
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 0.85s;
+}
 
-  <!-- Scroll progress — velocity ramp -->
-  <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+/* ------------------ reset / base ------------------ */
+*, *::before, *::after { box-sizing: border-box; }
 
-  <!-- Right telemetry rail (desktop) -->
-  <aside class="rail" id="rail" aria-hidden="true">
-    <div class="rail-label"><span id="railLabel">HERO</span></div>
-    <ul class="rail-dots">
-      <li><a href="#top" class="rail-dot" data-name="HERO"></a></li>
-      <li><a href="#profile" class="rail-dot" data-name="PROFILE"></a></li>
-      <li><a href="#method" class="rail-dot" data-name="METHOD"></a></li>
-      <li><a href="#evidence" class="rail-dot" data-name="EVIDENCE"></a></li>
-      <li><a href="#work" class="rail-dot" data-name="CASE FILES"></a></li>
-      <li><a href="#output" class="rail-dot" data-name="OUTPUT"></a></li>
-      <li><a href="#stack" class="rail-dot" data-name="INSTRUMENTS"></a></li>
-      <li><a href="#education" class="rail-dot" data-name="EDUCATION"></a></li>
-      <li><a href="#recognition" class="rail-dot" data-name="RECOGNITION"></a></li>
-      <li><a href="#contact" class="rail-dot" data-name="CONTACT"></a></li>
-    </ul>
-  </aside>
+html { scroll-behavior: smooth; }
 
-  <!-- =============== NAV =============== -->
-  <header class="navbar" id="navbar">
-    <nav class="nav-inner" aria-label="Primary">
-      <a href="#top" class="logo" aria-label="Home">
-        <span class="logo-mark">[sk]</span>
-        <span class="logo-text">
-          <span class="logo-name">Satya Kosaraju</span>
-          <span class="logo-sub">DEM · Granular Flow · Ag Machinery</span>
-        </span>
-      </a>
+body {
+  margin: 0;
+  background: var(--bg0);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
 
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
-        <span></span><span></span><span></span>
-      </button>
+img, svg, iframe { max-width: 100%; }
 
-      <ul class="nav-links" id="navLinks">
-        <li><a href="#profile"><span class="num">01</span>Profile</a></li>
-        <li><a href="#method"><span class="num">02</span>Method</a></li>
-        <li><a href="#work"><span class="num">04</span>Work</a></li>
-        <li><a href="#contact"><span class="num">09</span>Contact</a></li>
-        <li class="nav-cta-li">
-          <a href="Satya_resume.pdf" class="btn-nav" target="_blank" rel="noopener">Résumé <span aria-hidden="true">↗</span></a>
-        </li>
-      </ul>
-    </nav>
-  </header>
+h1, h2, h3, h4 { margin: 0; line-height: 1.1; }
 
-  <main>
-    <!-- =============== HERO =============== -->
-    <section class="hero" id="top">
-      <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
-      <div class="hero-grid" aria-hidden="true"></div>
-      <div class="hero-vignette" aria-hidden="true"></div>
+p { margin: 0 0 1.1em; }
+p:last-child { margin-bottom: 0; }
 
-      <div class="hud" aria-hidden="true">
-        <span class="hud-corner tl"></span>
-        <span class="hud-corner tr"></span>
-        <span class="hud-corner bl"></span>
-        <span class="hud-corner br"></span>
-      </div>
+a { color: inherit; text-decoration: none; }
 
-      <div class="hero-content">
-        <!-- If you've graduated / are job hunting, a stronger pill is:
-             "Open to Simulation &amp; Test Engineering roles" -->
-        <div class="hero-status intro" style="--d:0">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span class="status-text">Soil Machine Dynamics Lab · Iowa State × John Deere</span>
-        </div>
+::selection { background: var(--v4); color: var(--bg0); }
 
-        <h1 class="hero-title">
-          <span class="line intro" style="--d:1">Granular flow,</span>
-          <span class="line ramp-text intro" style="--d:2">engineered.</span>
-        </h1>
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
 
-        <p class="hero-sub intro" style="--d:3">
-          I build discrete element models of dry fertilizer that earn their keep —
-          calibrated on physical experiments, validated on rigs they've never seen,
-          then trusted to set the machine.
-        </p>
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 1rem;
+  z-index: 200;
+  padding: 0.6rem 1rem;
+  background: var(--accent);
+  color: var(--bg0);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  border-radius: 6px;
+  transition: top 0.2s;
+}
+.skip-link:focus { top: 1rem; }
 
-        <div class="hero-meta intro" style="--d:4">
-          <div class="hero-meta-item">
-            <span class="meta-k">Discipline</span>
-            <span class="meta-v">DEM · Granular Mechanics</span>
-          </div>
-          <div class="hero-meta-item">
-            <span class="meta-k">Platform</span>
-            <span class="meta-v">Altair EDEM · Python</span>
-          </div>
-          <div class="hero-meta-item">
-            <span class="meta-k">Program</span>
-            <span class="meta-v">Fertilizer Spreader Optimization</span>
-          </div>
-        </div>
+/* display type helper */
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 118;
+  font-stretch: 118%;
+  letter-spacing: 0.01em;
+}
 
-        <div class="hero-actions intro" style="--d:5">
-          <a href="#work" class="btn-primary" data-magnetic>Explore the work <span aria-hidden="true">↓</span></a>
-          <a href="webdem.html" target="_blank" rel="noopener" class="btn-ghost" data-magnetic>▶ Run the live simulation</a>
-        </div>
-      </div>
+/* velocity-ramp gradient text */
+.ramp-text {
+  background: var(--ramp);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
-      <div class="hero-readout intro" style="--d:6" aria-hidden="true">
-        <span>PARTICLES <b id="hudParticles">0000</b></span>
-        <span>DISC ω <b id="hudOmega">0.0</b> rad/s</span>
-        <span>T+<b id="hudTime">00:00.0</b></span>
-      </div>
+/* mono utility */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1.1rem;
+}
 
-      <div class="scroll-cue intro" style="--d:6" aria-hidden="true">
-        <span class="cue-line"></span>
-        <span class="cue-text">SCROLL</span>
-      </div>
-    </section>
+/* ------------------ progress bar ------------------ */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--ramp);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  z-index: 120;
+  pointer-events: none;
+}
 
-    <!-- =============== TICKER =============== -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee-track">
-        <div class="marquee-group">
-          <span>Material Characterization</span><i>▸</i>
-          <span>Angle of Repose</span><i>▸</i>
-          <span>Contact Calibration</span><i>▸</i>
-          <span>Hopper Discharge</span><i>▸</i>
-          <span>Impact Plate</span><i>▸</i>
-          <span>Twin-Disc Spreader</span><i>▸</i>
-          <span>Spread Pattern</span><i>▸</i>
-          <span>Urea</span><i>▸</i>
-          <span>Altair EDEM</span><i>▸</i>
-        </div>
-        <div class="marquee-group">
-          <span>Material Characterization</span><i>▸</i>
-          <span>Angle of Repose</span><i>▸</i>
-          <span>Contact Calibration</span><i>▸</i>
-          <span>Hopper Discharge</span><i>▸</i>
-          <span>Impact Plate</span><i>▸</i>
-          <span>Twin-Disc Spreader</span><i>▸</i>
-          <span>Spread Pattern</span><i>▸</i>
-          <span>Urea</span><i>▸</i>
-          <span>Altair EDEM</span><i>▸</i>
-        </div>
-      </div>
-    </div>
+/* ------------------ telemetry rail ------------------ */
+.rail {
+  position: fixed;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
 
-    <!-- =============== 01 · PROFILE =============== -->
-    <section class="section" id="profile" data-name="PROFILE">
-      <div class="section-head reveal">
-        <div class="eyebrow" data-scramble>01 // PROFILE</div>
-        <h2 class="section-title">A model that only matches its calibration data is a <em>curve&nbsp;fit</em>. One that holds on rigs it never saw is an <em>engineering&nbsp;tool</em>.</h2>
-      </div>
+.rail-label {
+  writing-mode: vertical-rl;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  color: var(--dim);
+  text-transform: uppercase;
+  min-height: 6.5em;
+  display: flex;
+  align-items: center;
+}
 
-      <div class="profile-grid">
-        <div class="profile-prose reveal">
-          <p class="lead">
-            Simulation is only worth what it can predict. My work sits at the seam
-            between physical test rigs and the discrete element models built to
-            stand in for them — where a model earns trust one validation at a time.
-          </p>
-          <p>
-            At Iowa State's Soil Machine Dynamics Laboratory, in collaboration with
-            John Deere, I run the full loop on dry-fertilizer modeling: characterize
-            the material, calibrate contact parameters against angle-of-repose
-            experiments, then stress the model on independent hopper-discharge and
-            impact-plate rigs before committing it to full twin-disc spreader
-            simulations.
-          </p>
-          <p>
-            The output isn't a report. It's a validated tool that turns particle
-            physics into machine settings — disc speed, feed rate, orifice
-            geometry — for uniform application in the field.
-          </p>
-          <a href="Satya_resume.pdf" target="_blank" rel="noopener" class="link-underline">
-            Download résumé <span aria-hidden="true">↗</span>
-          </a>
-        </div>
+.rail-dots {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-        <aside class="spec-card reveal" data-reveal="right">
-          <div class="spec-head">
-            <span>SPEC</span><span>SVK / PROFILE</span>
-          </div>
-          <dl class="spec-rows">
-            <div class="spec-row"><dt>Discipline</dt><dd>DEM &amp; granular mechanics</dd></div>
-            <div class="spec-row"><dt>Pipeline</dt><dd>Characterize → Calibrate → Validate → Simulate</dd></div>
-            <div class="spec-row"><dt>Materials</dt><dd>Urea · granular fertilizer · corn biomass</dd></div>
-            <div class="spec-row"><dt>Rigs</dt><dd>AOR · hopper discharge · impact plate</dd></div>
-            <div class="spec-row"><dt>Base</dt><dd>Ames, Iowa · USA</dd></div>
-          </dl>
-        </aside>
-      </div>
+.rail-dot {
+  display: block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--line2);
+  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+.rail-dot:hover { background: var(--mut); }
+.rail-dot.active {
+  background: var(--accent);
+  transform: scale(1.5);
+  box-shadow: 0 0 10px rgba(255, 122, 47, 0.55);
+}
 
-      <div class="stats-row reveal" data-stagger>
-        <div class="stat">
-          <div class="stat-num"><span data-counter="5">5</span></div>
-          <div class="stat-label">Machines &amp; mechanisms engineered</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num"><span data-counter="1">1</span></div>
-          <div class="stat-label">Patent · No. 202141009919</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num"><span data-counter="3">3</span></div>
-          <div class="stat-label">Independent validation rigs</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num"><span data-counter="7">7</span></div>
-          <div class="stat-label">Simulation &amp; CAD platforms</div>
-        </div>
-      </div>
-    </section>
+/* ------------------ navbar ------------------ */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  transition: background-color 0.35s, border-color 0.35s, backdrop-filter 0.35s;
+  border-bottom: 1px solid transparent;
+}
+.navbar.scrolled {
+  background: rgba(6, 9, 13, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: var(--line);
+}
 
-    <!-- =============== 02 · METHOD =============== -->
-    <section class="section section-dark" id="method" data-name="METHOD">
-      <div class="bg-grid" aria-hidden="true"></div>
+.nav-inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0.9rem var(--pad);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
 
-      <div class="section-head reveal">
-        <div class="eyebrow" data-scramble>02 // METHOD</div>
-        <h2 class="section-title">From a bag of fertilizer to a model you can <em>trust</em>.</h2>
-      </div>
+.logo { display: flex; align-items: center; gap: 0.7rem; }
 
-      <div class="method-wrap" id="methodWrap">
-        <div class="method-line" aria-hidden="true"></div>
-        <ol class="method-steps">
-          <li class="m-step reveal">
-            <div class="m-num">01</div>
-            <div class="m-body">
-              <h3>Characterize</h3>
-              <p>Size distribution, particle shape, density, friction, restitution —
-              measured, not assumed. Material truth goes in before a single
-              parameter gets tuned.</p>
-            </div>
-            <svg class="m-icon" viewBox="0 0 64 64" aria-hidden="true">
-              <circle cx="20" cy="44" r="4"/><circle cx="32" cy="44" r="4"/><circle cx="44" cy="44" r="4"/>
-              <circle cx="26" cy="35" r="4"/><circle cx="38" cy="35" r="4"/><circle cx="32" cy="26" r="4"/>
-            </svg>
-          </li>
-          <li class="m-step reveal">
-            <div class="m-num">02</div>
-            <div class="m-body">
-              <h3>Calibrate</h3>
-              <p>Static angle-of-repose experiments pin the DEM contact parameters.
-              The simulated heap must match the physical pile within tolerance
-              before anything else is allowed to run.</p>
-            </div>
-            <svg class="m-icon" viewBox="0 0 64 64" aria-hidden="true">
-              <path d="M10 48 L32 20 L54 48 Z" fill="none"/>
-              <path d="M40 48 A14 14 0 0 0 36.5 39" fill="none"/>
-              <line x1="6" y1="48" x2="58" y2="48"/>
-            </svg>
-          </li>
-          <li class="m-step reveal">
-            <div class="m-num">03</div>
-            <div class="m-body">
-              <h3>Validate</h3>
-              <p>Hopper-discharge and impact-plate rigs the model has never seen.
-              Percentage relative error, confidence intervals, repeatability —
-              if it only works where it was tuned, it doesn't work.</p>
-            </div>
-            <svg class="m-icon" viewBox="0 0 64 64" aria-hidden="true">
-              <path d="M16 12 H48 L38 34 H26 Z" fill="none"/>
-              <line x1="32" y1="34" x2="32" y2="46"/>
-              <line x1="20" y1="52" x2="44" y2="52"/>
-            </svg>
-          </li>
-          <li class="m-step reveal">
-            <div class="m-num">04</div>
-            <div class="m-body">
-              <h3>Simulate the machine</h3>
-              <p>Full twin-disc spreader runs predict spread patterns and drive the
-              settings — disc RPM, feed rate, orifice geometry — toward uniform
-              application at field scale.</p>
-            </div>
-            <svg class="m-icon" viewBox="0 0 64 64" aria-hidden="true">
-              <ellipse cx="32" cy="36" rx="18" ry="7" fill="none"/>
-              <line x1="32" y1="36" x2="32" y2="20"/>
-              <path d="M12 30 Q6 24 10 18" fill="none"/>
-              <path d="M52 30 Q58 24 54 18" fill="none"/>
-            </svg>
-          </li>
-        </ol>
-      </div>
-    </section>
+.logo-mark {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg1);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.logo:hover .logo-mark {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px rgba(255, 122, 47, 0.25);
+}
 
-    <!-- =============== 03 · EVIDENCE =============== -->
-    <section class="section" id="evidence" data-name="EVIDENCE">
-      <div class="section-head reveal">
-        <div class="eyebrow" data-scramble>03 // EVIDENCE</div>
-        <h2 class="section-title">A DEM model is only as good as its <em>behavior</em>.</h2>
-      </div>
+.logo-text { display: flex; flex-direction: column; line-height: 1.25; }
+.logo-name { font-weight: 600; font-size: 0.92rem; letter-spacing: 0.01em; }
+.logo-sub {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
 
-      <div class="evidence-grid">
-        <figure class="video-frame reveal">
-          <iframe
-            src="https://www.youtube.com/embed/Ek-IkwTqM0g"
-            title="Fertilizer Spreader DEM Simulation"
-            loading="lazy"
-            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen></iframe>
-          <figcaption class="frame-tag">SIM OUTPUT — TWIN-DISC SPREADER</figcaption>
-        </figure>
+.nav-links {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 1.7rem;
+  margin: 0; padding: 0;
+}
 
-        <a href="webdem.html" target="_blank" rel="noopener" class="sim-card reveal" data-reveal="right">
-          <div class="sim-tag">Interactive</div>
-          <div class="sim-title">Run the <em>twin-disc</em> simulation in your browser</div>
-          <div class="sim-meta">
-            <span>WebGL · Three.js</span>
-            <span>RPM + feed rate, live</span>
-          </div>
-          <div class="sim-arrow" aria-hidden="true">↗</div>
-        </a>
-      </div>
-    </section>
+.nav-links a {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--mut);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  position: relative;
+  padding: 0.25rem 0;
+  transition: color 0.25s;
+}
+.nav-links a .num {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--dim);
+  transition: color 0.25s;
+}
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: -2px;
+  width: 100%; height: 1px;
+  background: var(--ramp);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s var(--ease-out);
+}
+.nav-links a:hover, .nav-links a.active { color: var(--ink); }
+.nav-links a:hover .num, .nav-links a.active .num { color: var(--accent); }
+.nav-links a:hover::after, .nav-links a.active::after { transform: scaleX(1); }
 
-    <!-- =============== 04 · CASE FILES =============== -->
-    <section class="section section-dark" id="work" data-name="CASE FILES">
-      <div class="bg-grid" aria-hidden="true"></div>
+.btn-nav {
+  font-family: var(--font-mono);
+  font-size: 0.68rem !important;
+  letter-spacing: 0.08em;
+  color: var(--bg0) !important;
+  background: var(--accent);
+  padding: 0.55rem 0.95rem !important;
+  border-radius: 7px;
+  transition: background 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.btn-nav::after { display: none; }
+.btn-nav:hover {
+  background: var(--v3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 122, 47, 0.3);
+}
 
-      <div class="section-head reveal">
-        <div class="eyebrow" data-scramble>04 // CASE FILES</div>
-        <h2 class="section-title">Five builds. One thread: <em>make the physics answer to the field</em>.</h2>
-      </div>
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 42px; height: 42px;
+  background: var(--bg1);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0 10px;
+  z-index: 110;
+}
+.nav-toggle span {
+  display: block;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: transform 0.3s var(--ease-out), opacity 0.3s;
+}
+.nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-toggle.open span:nth-child(2) { opacity: 0; }
+.nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-      <div class="projects">
-        <article class="project featured reveal">
-          <div class="p-index" aria-hidden="true">01</div>
-          <div class="p-head">
-            <span class="p-year">2023 — 2026</span>
-            <span class="p-org">ISU × John Deere</span>
-            <span class="p-chip p-chip-accent">Flagship</span>
-          </div>
-          <h3 class="p-title">DEM Calibration &amp; Multi-Method Validation of Urea</h3>
-          <p class="p-desc">
-            Built the calibration-to-validation pipeline for urea in Altair EDEM:
-            contact parameters tuned on angle of repose, then held to account on
-            independent hopper-discharge and impact-plate experiments. Accuracy
-            quantified with percentage relative error, confidence intervals, and
-            repeatability analysis; data pipeline in Python, MATLAB, and ImageJ.
-            <!-- Add your headline number here when ready, e.g.:
-                 "Matched experimental AOR within X° and discharge mass flow within Y%." -->
-          </p>
-          <div class="p-tags">
-            <span>EDEM</span><span>AOR</span><span>Hopper</span><span>Impact plate</span><span>Python</span>
-          </div>
-        </article>
+/* ------------------ hero ------------------ */
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--bg0);
+}
 
-        <article class="project reveal">
-          <div class="p-index" aria-hidden="true">02</div>
-          <div class="p-head">
-            <span class="p-year">2024 — 2026</span>
-            <span class="p-chip">Full machine</span>
-          </div>
-          <h3 class="p-title">Twin-Disc Fertilizer Spreader Simulation</h3>
-          <p class="p-desc">
-            Full-machine DEM of a twin spinning-disc spreader: particle
-            trajectories, spread-pattern uniformity, and sensitivity across disc
-            RPM, feed rate, and orifice geometry. Geometry authored in SolidWorks;
-            outputs post-processed in Python and MATLAB to turn particle clouds
-            into machine settings.
-          </p>
-          <div class="p-tags">
-            <span>EDEM</span><span>SolidWorks</span><span>Pattern uniformity</span><span>MATLAB</span>
-          </div>
-        </article>
+.hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 72%, transparent 100%);
+}
 
-        <article class="project reveal">
-          <div class="p-index" aria-hidden="true">03</div>
-          <div class="p-head">
-            <span class="p-year">2020 — 2021</span>
-            <span class="p-org">Patent No. 202141009919</span>
-            <span class="p-chip p-chip-accent">Patent</span>
-          </div>
-          <h3 class="p-title">Autonomous Precision-Irrigation Platform</h3>
-          <p class="p-desc">
-            Patented mechatronic system for self-regulating irrigation: CNN-based
-            weed detection and targeted herbicide application on a ROS backbone,
-            integrating sensing, actuation, and autonomous control into one
-            field-ready platform.
-          </p>
-          <div class="p-tags">
-            <span>ROS</span><span>CNN</span><span>Mechatronics</span><span>Controls</span>
-          </div>
-        </article>
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.28;
+  -webkit-mask-image: radial-gradient(120% 90% at 30% 40%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(120% 90% at 30% 40%, #000 30%, transparent 78%);
+  pointer-events: none;
+}
 
-        <article class="project reveal">
-          <div class="p-index" aria-hidden="true">04</div>
-          <div class="p-head">
-            <span class="p-year">2022 — 2023</span>
-            <span class="p-chip">Machinery</span>
-          </div>
-          <h3 class="p-title">Tractor-Mounted Multi-Crop Seedling Transplanter</h3>
-          <p class="p-desc">
-            Field machine engineered to cut manual transplanting labor across
-            multiple crops. Owned the mechanism layout, mechanical design, and
-            field-application analysis from concept through evaluation.
-          </p>
-          <div class="p-tags">
-            <span>Mechanism design</span><span>Field machinery</span><span>CAD</span>
-          </div>
-        </article>
+.hero-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(110% 100% at 70% 55%, transparent 40%, rgba(6, 9, 13, 0.75) 100%);
+  pointer-events: none;
+}
 
-        <article class="project reveal">
-          <div class="p-index" aria-hidden="true">05</div>
-          <div class="p-head">
-            <span class="p-year">2020 — 2021</span>
-            <span class="p-chip">Energy</span>
-          </div>
-          <h3 class="p-title">Solar-Integrated Briquetting Machine</h3>
-          <p class="p-desc">
-            Solar-assisted briquetting machine that compacts loose biomass into
-            usable fuel. Led the mechanical design and compaction mechanism through
-            prototype-level analysis.
-          </p>
-          <div class="p-tags">
-            <span>Solar</span><span>Biomass</span><span>Mechanical design</span>
-          </div>
-        </article>
-      </div>
-    </section>
+/* HUD corner brackets */
+.hud { position: absolute; inset: clamp(0.9rem, 2.5vw, 2rem); pointer-events: none; }
+.hud-corner {
+  position: absolute;
+  width: 26px; height: 26px;
+  border: 1px solid var(--line2);
+  opacity: 0.9;
+}
+.hud-corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.hud-corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.hud-corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.hud-corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
 
-    <!-- =============== 05 · OUTPUT =============== -->
-    <section class="section section-tight" id="output" data-name="OUTPUT">
-      <div class="section-head reveal">
-        <div class="eyebrow" data-scramble>05 // OUTPUT</div>
-        <h2 class="section-title">Selected talks &amp; research output.</h2>
-      </div>
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: var(--maxw);
+  width: 100%;
+  margin: 0 auto;
+  padding: 7.5rem var(--pad) 6rem;
+}
 
-      <ul class="pub-list">
-        <li class="pub-item reveal">
-          <div class="pub-year">2023</div>
-          <div class="pub-body">
-            <h3 class="pub-title">Developing Digital Twins of Cleaning Shoe Separation of Corn Biomass Particles</h3>
-            <div class="pub-authors">S.&nbsp;V.&nbsp;Kosaraju · J.-M.&nbsp;Noh · M.&nbsp;Z.&nbsp;Tekeste · R.&nbsp;T.&nbsp;Chaganti · Y.&nbsp;Zhao</div>
-            <div class="pub-venue">Center for Multiphase Flow Research &amp; Education (CoMFRE) Conference · Iowa State University</div>
-          </div>
-        </li>
-      </ul>
-    </section>
+.hero-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  background: rgba(16, 23, 36, 0.6);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mut);
+  margin-bottom: 2rem;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--v2);
+  box-shadow: 0 0 0 0 rgba(143, 230, 73, 0.6);
+  animation: pulse 2.2s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(143, 230, 73, 0.55); }
+  70% { box-shadow: 0 0 0 9px rgba(143, 230, 73, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(143, 230, 73, 0); }
+}
 
-    <!-- =============== 06 · INSTRUMENTS =============== -->
-    <section class="section" id="stack" data-name="INSTRUMENTS">
-      <div class="section-head reveal">
-        <div class="eyebrow" data-scramble>06 // INSTRUMENTS</div>
-        <h2 class="section-title">The bench: <em>model, simulate, verify, build</em>.</h2>
-      </div>
+.hero-title {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 121;
+  font-stretch: 121%;
+  font-weight: 780;
+  font-size: clamp(2.9rem, 8.2vw, 6.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  margin-bottom: 1.6rem;
+}
+.hero-title .line { display: block; }
 
-      <div class="stack-grid">
-        <div class="stack-col reveal">
-          <h4>Simulation</h4>
-          <ul>
-            <li>Altair EDEM</li>
-            <li>DEM modeling</li>
-            <li>AcuSolve</li>
-            <li>HyperMesh</li>
-            <li>CFD fundamentals</li>
-          </ul>
-        </div>
-        <div class="stack-col reveal">
-          <h4>CAD &amp; Design</h4>
-          <ul>
-            <li>SolidWorks</li>
-            <li>Fusion 360</li>
-            <li>Creo</li>
-            <li>AutoCAD</li>
-          </ul>
-        </div>
-        <div class="stack-col reveal">
-          <h4>Data &amp; Analysis</h4>
-          <ul>
-            <li>Python</li>
-            <li>MATLAB</li>
-            <li>JMP</li>
-            <li>ImageJ · OpenCV</li>
-          </ul>
-        </div>
-        <div class="stack-col reveal">
-          <h4>Fabrication &amp; Lab</h4>
-          <ul>
-            <li>3D printing &amp; scanning</li>
-            <li>Laser cutting</li>
-            <li>CNC milling · lathe</li>
-            <li>AOR / hopper / impact rigs</li>
-          </ul>
-        </div>
-      </div>
-    </section>
+.hero-sub {
+  max-width: 34em;
+  font-size: clamp(1.02rem, 1.5vw, 1.2rem);
+  color: var(--mut);
+  margin-bottom: 2.2rem;
+}
 
-    <!-- =============== 07 · EDUCATION =============== -->
-    <section class="section section-tight" id="education" data-name="EDUCATION">
-      <div class="section-head reveal">
-        <div class="eyebrow" data-scramble>07 // EDUCATION</div>
-      </div>
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 2.6rem;
+  row-gap: 1rem;
+  margin-bottom: 2.4rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--line2);
+}
+.hero-meta-item { display: flex; flex-direction: column; gap: 0.2rem; }
+.meta-k {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.meta-v { font-size: 0.92rem; font-weight: 500; }
 
-      <div class="edu-grid">
-        <article class="edu-card reveal">
-          <div class="edu-year">2023 — 2026</div>
-          <h3 class="edu-degree">M.S., Agricultural &amp; Biosystems Engineering</h3>
-          <div class="edu-school">Iowa State University · Ames, IA</div>
-          <p class="edu-desc">
-            Thesis: <em>Optimization of Dry Fertilizer Spreaders — DEM-Based Material
-            Flow Analysis and Experimental Validation</em>, at the Soil Machine
-            Dynamics Laboratory in collaboration with John Deere.
-          </p>
-        </article>
+.hero-actions { display: flex; flex-wrap: wrap; gap: 0.9rem; }
 
-        <article class="edu-card reveal">
-          <div class="edu-year">2019 — 2023</div>
-          <h3 class="edu-degree">B.Tech., Agricultural Engineering</h3>
-          <div class="edu-school">Vignan University · Guntur, India</div>
-          <p class="edu-desc">
-            GPA 8.31/10 · <strong>Gold Medal, Best Outgoing Student</strong> —
-            ranked 1st of 106.
-          </p>
-        </article>
-      </div>
-    </section>
+.btn-primary, .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  font-weight: 600;
+  font-size: 0.93rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 9px;
+  transition: transform 0.25s var(--ease-out), box-shadow 0.3s, background 0.3s, border-color 0.3s, color 0.3s;
+  will-change: transform;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg0);
+}
+.btn-primary:hover {
+  background: var(--v3);
+  box-shadow: 0 10px 34px rgba(255, 122, 47, 0.35);
+}
+.btn-ghost {
+  border: 1px solid var(--line2);
+  color: var(--ink);
+  background: rgba(16, 23, 36, 0.4);
+}
+.btn-ghost:hover {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+  box-shadow: 0 8px 26px rgba(25, 200, 230, 0.15);
+}
 
-    <!-- =============== 08 · RECOGNITION =============== -->
-    <section class="section section-tight" id="recognition" data-name="RECOGNITION">
-      <div class="section-head reveal">
-        <div class="eyebrow" data-scramble>08 // RECOGNITION</div>
-      </div>
+.hero-readout {
+  position: absolute;
+  left: var(--pad);
+  bottom: clamp(1.4rem, 4vh, 2.6rem);
+  z-index: 3;
+  display: flex;
+  gap: 1.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+}
+.hero-readout b {
+  font-weight: 500;
+  color: var(--accent-2);
+}
 
-      <div class="awards" data-stagger>
-        <div class="award reveal">
-          <div class="award-mark">⌬</div>
-          <div class="award-body">
-            <h3>Patent No. 202141009919</h3>
-            <p>Mechatronic robotic device for self-regulating precision irrigation · Filed 2021</p>
-          </div>
-        </div>
-        <div class="award reveal">
-          <div class="award-mark">★</div>
-          <div class="award-body">
-            <h3>Gold Medal — Best Outgoing Student</h3>
-            <p>Ranked 1st of 106 · Vignan University · 2023</p>
-          </div>
-        </div>
-        <div class="award reveal">
-          <div class="award-mark">◇</div>
-          <div class="award-body">
-            <h3>National Farm Progress Show Ambassador</h3>
-            <p>Boone, IA · Presented Soil Machine Dynamics Lab research to farmers and industry</p>
-          </div>
-        </div>
-        <div class="award reveal">
-          <div class="award-mark">◊</div>
-          <div class="award-body">
-            <h3>Engineering Career Services Ambassador</h3>
-            <p>Iowa State University · Career fair operations and student guidance</p>
-          </div>
-        </div>
-        <div class="award reveal">
-          <div class="award-mark">◯</div>
-          <div class="award-body">
-            <h3>World Food Prize Volunteer</h3>
-            <p>Norman E. Borlaug International Dialogue · Des Moines, IA · 2024</p>
-          </div>
-        </div>
-        <div class="award reveal">
-          <div class="award-mark">▲</div>
-          <div class="award-body">
-            <h3>Professional Memberships</h3>
-            <p>ASABE · CoMFRE · UN Food &amp; Agriculture Organization</p>
-          </div>
-        </div>
-      </div>
-    </section>
+.scroll-cue {
+  position: absolute;
+  right: clamp(1.5rem, 4vw, 3rem);
+  bottom: clamp(1.4rem, 4vh, 2.6rem);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+.cue-line {
+  width: 1px; height: 44px;
+  background: linear-gradient(180deg, transparent, var(--accent));
+  animation: cueDrop 2s var(--ease-out) infinite;
+  transform-origin: top;
+}
+@keyframes cueDrop {
+  0% { transform: scaleY(0); opacity: 0; }
+  35% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1) translateY(8px); opacity: 0; }
+}
+.cue-text {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.32em;
+  color: var(--dim);
+}
 
-    <!-- =============== 09 · CONTACT =============== -->
-    <section class="section contact-section" id="contact" data-name="CONTACT">
-      <div class="bg-grid" aria-hidden="true"></div>
+/* hero load-in sequence */
+.js .intro {
+  opacity: 0;
+  transform: translateY(26px);
+  filter: blur(5px);
+  animation: introUp 0.9s var(--ease-out) forwards;
+  animation-delay: calc(0.12s + var(--d, 0) * 0.11s);
+}
+@keyframes introUp {
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
 
-      <div class="contact-inner">
-        <div class="eyebrow reveal" data-scramble>09 // CONTACT</div>
-        <h2 class="contact-title reveal">
-          <span class="line">Got a granular</span>
-          <span class="line ramp-text">flow problem?</span>
-        </h2>
-        <p class="contact-sub reveal">
-          DEM modeling, machinery design, research collaboration — or a hard
-          question about why your material won't behave.
-        </p>
+/* ------------------ marquee ------------------ */
+.marquee {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg1);
+  overflow: hidden;
+  padding: 0.85rem 0;
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 34s linear infinite;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-group {
+  display: flex;
+  align-items: center;
+  gap: 2.2rem;
+  padding-right: 2.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mut);
+  white-space: nowrap;
+}
+.marquee-group i { color: var(--accent); font-style: normal; }
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
 
-        <div class="contact-grid" data-stagger>
-          <a href="mailto:satya.v.kosaraju@gmail.com" class="contact-card reveal">
-            <span class="cc-label">Email</span>
-            <span class="cc-value">satya.v.kosaraju@gmail.com</span>
-            <span class="cc-arrow" aria-hidden="true">↗</span>
-          </a>
-          <a href="tel:+15159163387" class="contact-card reveal">
-            <span class="cc-label">Phone</span>
-            <span class="cc-value">+1 (515) 916-3387</span>
-            <span class="cc-arrow" aria-hidden="true">↗</span>
-          </a>
-          <a href="https://linkedin.com/in/satya-kosaraju" target="_blank" rel="noopener" class="contact-card reveal">
-            <span class="cc-label">LinkedIn</span>
-            <span class="cc-value">/in/satya-kosaraju</span>
-            <span class="cc-arrow" aria-hidden="true">↗</span>
-          </a>
-          <div class="contact-card contact-card-static reveal">
-            <span class="cc-label">Base</span>
-            <span class="cc-value">Ames, Iowa · USA</span>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
+/* ------------------ sections ------------------ */
+.section {
+  position: relative;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: clamp(4.5rem, 10vw, 8rem) var(--pad);
+}
+.section-tight { padding-top: clamp(3rem, 7vw, 5rem); padding-bottom: clamp(3rem, 7vw, 5rem); }
 
-  <!-- =============== TITLE BLOCK FOOTER =============== -->
-  <footer class="titleblock">
-    <div class="tb-grid">
-      <div class="tb-cell"><span class="tb-k">Name</span><span class="tb-v">Satya Venkatesh Kosaraju</span></div>
-      <div class="tb-cell"><span class="tb-k">Role</span><span class="tb-v">Simulation Engineer — DEM</span></div>
-      <div class="tb-cell"><span class="tb-k">Dwg No.</span><span class="tb-v">SVK-PORT-003</span></div>
-      <div class="tb-cell"><span class="tb-k">Rev</span><span class="tb-v">C</span></div>
-      <div class="tb-cell"><span class="tb-k">Date</span><span class="tb-v">2026</span></div>
-      <div class="tb-cell"><span class="tb-k">Sheet</span><span class="tb-v">1 / 1</span></div>
-    </div>
-    <div class="tb-credit">© 2026 Satya Venkatesh Kosaraju · Built with HTML · CSS · Canvas · Three.js</div>
-  </footer>
+.section-dark {
+  max-width: none;
+  background: var(--bg1);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.section-dark > * { max-width: var(--maxw); margin-left: auto; margin-right: auto; }
+.section-dark > .bg-grid { max-width: none; }
 
-  <!-- Reticle cursor (desktop, fine pointers only) -->
-  <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
-  <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.16;
+  pointer-events: none;
+}
+.section-dark .section-head,
+.section-dark .method-wrap,
+.section-dark .projects,
+.contact-section .contact-inner { position: relative; z-index: 1; }
 
-  <script src="main.js" defer></script>
-</body>
-</html>
+.section-head { margin-bottom: clamp(2.2rem, 5vw, 3.6rem); }
+
+.section-title {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 112;
+  font-stretch: 112%;
+  font-weight: 680;
+  font-size: clamp(1.55rem, 3.4vw, 2.5rem);
+  line-height: 1.14;
+  letter-spacing: 0;
+  max-width: 22em;
+}
+.section-title em {
+  font-style: normal;
+  background: var(--ramp);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ------------------ profile ------------------ */
+.profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+  margin-bottom: clamp(2.6rem, 6vw, 4rem);
+}
+
+.profile-prose .lead {
+  font-size: 1.22rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.profile-prose p { color: var(--mut); }
+.profile-prose p.lead { color: var(--ink); }
+
+.link-underline {
+  display: inline-flex;
+  gap: 0.4em;
+  margin-top: 0.6rem;
+  font-weight: 600;
+  color: var(--accent-2);
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: -3px;
+  width: 100%; height: 1px;
+  background: var(--ramp);
+  transform: scaleX(0.35);
+  transform-origin: left;
+  transition: transform 0.35s var(--ease-out);
+}
+.link-underline:hover::after { transform: scaleX(1); }
+
+/* spec card — CAD title-block styling */
+.spec-card {
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  background: var(--bg1);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+.spec-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.65rem 1.1rem;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line2);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+}
+.spec-rows { margin: 0; }
+.spec-row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+}
+.spec-row:last-child { border-bottom: 0; }
+.spec-row dt {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding-top: 0.3em;
+}
+.spec-row dd { margin: 0; font-size: 0.9rem; color: var(--ink); }
+
+/* stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg1);
+}
+.stat {
+  padding: 1.5rem 1.4rem;
+  border-right: 1px solid var(--line);
+  transition: background 0.3s;
+}
+.stat:last-child { border-right: 0; }
+.stat:hover { background: var(--bg2); }
+.stat-num {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 116;
+  font-stretch: 116%;
+  font-weight: 740;
+  font-size: 2.4rem;
+  line-height: 1;
+  background: var(--ramp);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.stat-label {
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+  line-height: 1.6;
+}
+
+/* ------------------ method timeline ------------------ */
+.method-wrap { position: relative; padding-left: clamp(2.4rem, 5vw, 3.4rem); }
+
+.method-line {
+  position: absolute;
+  left: 11px;
+  top: 8px; bottom: 8px;
+  width: 2px;
+  background: var(--line2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.method-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ramp);
+  transform-origin: top;
+  transform: scaleY(var(--p, 0));
+}
+
+.method-steps {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4.5vw, 3rem);
+}
+
+.m-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.4rem;
+  align-items: start;
+  padding: 1.4rem 1.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(16, 23, 36, 0.5);
+  transition: border-color 0.35s, transform 0.35s var(--ease-out), box-shadow 0.35s;
+}
+.m-step::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * clamp(2.4rem, 5vw, 3.4rem) + 6px);
+  top: 2rem;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--bg1);
+  border: 2px solid var(--line2);
+  transition: border-color 0.35s, box-shadow 0.35s, background 0.35s;
+}
+.m-step.lit::before {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(255, 122, 47, 0.6);
+}
+.m-step:hover {
+  border-color: var(--line2);
+  transform: translateX(6px);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.35);
+}
+
+.m-num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--dim);
+  padding-top: 0.35rem;
+  transition: color 0.35s;
+}
+.m-step.lit .m-num { color: var(--accent); }
+
+.m-body h3 {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 110;
+  font-stretch: 110%;
+  font-size: 1.22rem;
+  font-weight: 660;
+  margin-bottom: 0.45rem;
+}
+.m-body p { color: var(--mut); font-size: 0.96rem; margin: 0; max-width: 52em; }
+
+.m-icon {
+  width: 52px; height: 52px;
+  stroke: var(--accent-2);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+.m-icon circle { fill: var(--accent-2); stroke: none; opacity: 0.9; }
+
+/* ------------------ evidence ------------------ */
+.evidence-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
+  gap: clamp(1.4rem, 3vw, 2.2rem);
+  align-items: stretch;
+}
+
+.video-frame {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg1);
+  aspect-ratio: 16 / 9;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+.video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  border: 0;
+}
+.frame-tag {
+  position: absolute;
+  left: 0.9rem; top: 0.8rem;
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  color: var(--ink);
+  background: rgba(6, 9, 13, 0.72);
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  padding: 0.35rem 0.6rem;
+  pointer-events: none;
+}
+
+.sim-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.4rem;
+  padding: 1.6rem;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(25, 200, 230, 0.12), transparent 55%),
+    var(--bg1);
+  overflow: hidden;
+  transition: transform 0.35s var(--ease-out), border-color 0.35s, box-shadow 0.35s;
+}
+.sim-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-2);
+  box-shadow: 0 18px 55px rgba(25, 200, 230, 0.18);
+}
+.sim-tag {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  border: 1px solid var(--accent-2);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+}
+.sim-title {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 110;
+  font-stretch: 110%;
+  font-size: 1.35rem;
+  font-weight: 660;
+  line-height: 1.25;
+}
+.sim-title em { font-style: normal; color: var(--accent-2); }
+.sim-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+.sim-arrow {
+  position: absolute;
+  right: 1.3rem; bottom: 1rem;
+  font-size: 1.5rem;
+  color: var(--accent-2);
+  transition: transform 0.3s var(--ease-out);
+}
+.sim-card:hover .sim-arrow { transform: translate(4px, -4px); }
+
+/* ------------------ projects ------------------ */
+.projects { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.project {
+  position: relative;
+  padding: clamp(1.5rem, 3.5vw, 2.3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(16, 23, 36, 0.45);
+  overflow: hidden;
+  transition: transform 0.4s var(--ease-out), box-shadow 0.4s, background 0.4s;
+}
+.project::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--ramp);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.project:hover {
+  transform: translateY(-5px);
+  background: rgba(16, 23, 36, 0.75);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+}
+.project:hover::before { opacity: 0.9; }
+
+.p-index {
+  position: absolute;
+  right: 1rem; top: -0.6rem;
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 125;
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: clamp(4rem, 9vw, 6.5rem);
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line2);
+  opacity: 0.55;
+  transition: opacity 0.4s, transform 0.5s var(--ease-out);
+  pointer-events: none;
+}
+.project:hover .p-index {
+  opacity: 0.9;
+  transform: translateY(4px);
+  -webkit-text-stroke-color: var(--accent);
+}
+
+.p-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+  margin-bottom: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.p-year { color: var(--dim); }
+.p-org { color: var(--accent-2); }
+.p-chip {
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  padding: 0.22rem 0.6rem;
+  color: var(--mut);
+}
+.p-chip-accent { border-color: var(--accent); color: var(--accent); }
+
+.p-title {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 112;
+  font-stretch: 112%;
+  font-weight: 680;
+  font-size: clamp(1.25rem, 2.6vw, 1.7rem);
+  margin-bottom: 0.7rem;
+  max-width: 18em;
+}
+.featured .p-title { font-size: clamp(1.5rem, 3.2vw, 2.1rem); }
+
+.p-desc { color: var(--mut); max-width: 58em; font-size: 0.98rem; }
+
+.p-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+}
+.p-tags span {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mut);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.3rem 0.55rem;
+  background: var(--bg0);
+  transition: border-color 0.3s, color 0.3s;
+}
+.project:hover .p-tags span { border-color: var(--line2); color: var(--ink); }
+
+/* ------------------ output / publications ------------------ */
+.pub-list { list-style: none; margin: 0; padding: 0; }
+.pub-item {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 1.4rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.pub-year {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  padding-top: 0.35em;
+}
+.pub-title {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 108;
+  font-stretch: 108%;
+  font-size: 1.18rem;
+  font-weight: 640;
+  margin-bottom: 0.45rem;
+}
+.pub-authors { color: var(--mut); font-size: 0.9rem; margin-bottom: 0.25rem; }
+.pub-venue {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* ------------------ stack ------------------ */
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
+}
+.stack-col {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(16, 23, 36, 0.45);
+  padding: 1.4rem 1.4rem 1.2rem;
+  transition: border-color 0.35s, transform 0.35s var(--ease-out), background 0.35s;
+}
+.stack-col:hover {
+  border-color: var(--line2);
+  background: var(--bg1);
+  transform: translateY(-4px);
+}
+.stack-col h4 {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--line);
+}
+.stack-col ul { list-style: none; margin: 0; padding: 0; }
+.stack-col li {
+  position: relative;
+  padding: 0.32rem 0 0.32rem 1.1rem;
+  font-size: 0.92rem;
+  color: var(--mut);
+  transition: color 0.25s, padding-left 0.25s;
+}
+.stack-col li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--line2);
+  transition: color 0.25s;
+}
+.stack-col li:hover { color: var(--ink); padding-left: 1.3rem; }
+.stack-col li:hover::before { color: var(--accent); }
+
+/* ------------------ education ------------------ */
+.edu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem;
+}
+.edu-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(16, 23, 36, 0.45);
+  padding: 1.6rem;
+  transition: border-color 0.35s, transform 0.35s var(--ease-out);
+}
+.edu-card:hover { border-color: var(--line2); transform: translateY(-4px); }
+.edu-year {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  margin-bottom: 0.8rem;
+}
+.edu-degree {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 108;
+  font-stretch: 108%;
+  font-size: 1.15rem;
+  font-weight: 660;
+  margin-bottom: 0.35rem;
+}
+.edu-school { color: var(--mut); font-size: 0.88rem; margin-bottom: 0.8rem; }
+.edu-desc { color: var(--mut); font-size: 0.92rem; margin: 0; }
+.edu-desc strong { color: var(--ink); }
+
+/* ------------------ recognition ------------------ */
+.awards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.1rem;
+}
+.award {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(16, 23, 36, 0.45);
+  padding: 1.3rem;
+  transition: border-color 0.35s, transform 0.35s var(--ease-out);
+}
+.award:hover { border-color: var(--line2); transform: translateY(-4px); }
+.award-mark {
+  font-size: 1.15rem;
+  color: var(--accent);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  width: 42px; height: 42px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--bg0);
+}
+.award-body h3 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.3rem; }
+.award-body p { color: var(--mut); font-size: 0.85rem; margin: 0; }
+
+/* ------------------ contact ------------------ */
+.contact-section {
+  max-width: none;
+  background: var(--bg1);
+  border-top: 1px solid var(--line);
+}
+.contact-inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  text-align: left;
+}
+.contact-title {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 121;
+  font-stretch: 121%;
+  font-weight: 780;
+  font-size: clamp(2.4rem, 6.5vw, 4.6rem);
+  line-height: 1;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+}
+.contact-title .line { display: block; }
+.contact-sub {
+  color: var(--mut);
+  max-width: 38em;
+  margin-bottom: 2.4rem;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+.contact-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.3rem 1.4rem;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  background: var(--bg0);
+  transition: transform 0.35s var(--ease-out), border-color 0.35s, box-shadow 0.35s;
+}
+a.contact-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  box-shadow: 0 16px 44px rgba(255, 122, 47, 0.16);
+}
+.cc-label {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.cc-value { font-weight: 600; font-size: 0.95rem; word-break: break-word; }
+.cc-arrow {
+  position: absolute;
+  top: 1rem; right: 1.1rem;
+  color: var(--accent);
+  transition: transform 0.3s var(--ease-out);
+}
+a.contact-card:hover .cc-arrow { transform: translate(3px, -3px); }
+.contact-card-static { border-style: dashed; }
+.contact-card-static .cc-value { color: var(--mut); }
+
+/* misc small pieces */
+.status-text { white-space: nowrap; }
+.pub-body { min-width: 0; }
+.nav-cta-li { margin-left: 0.4rem; }
+
+/* ------------------ title-block footer ------------------ */
+.titleblock {
+  border-top: 1px solid var(--line2);
+  background: var(--bg0);
+}
+.tb-grid {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 2fr 1.2fr 0.6fr 0.7fr 0.7fr;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.tb-cell {
+  padding: 0.9rem 1rem;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.tb-cell:last-child { border-right: 0; }
+.tb-k {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.tb-v { font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink); }
+.tb-credit {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0.8rem 1rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  border-top: 1px solid var(--line);
+}
+
+/* ------------------ reveal system ------------------ */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  filter: blur(4px);
+  transition:
+    opacity var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-out),
+    filter var(--dur) var(--ease-out);
+  transition-delay: var(--rd, 0s);
+  will-change: opacity, transform;
+}
+.js .reveal[data-reveal="right"] { transform: translateX(36px); }
+.js .reveal[data-reveal="left"] { transform: translateX(-36px); }
+.js .reveal.in {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+/* ------------------ reticle cursor ------------------ */
+.cursor-dot, .cursor-ring {
+  position: fixed;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 300;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+}
+.cursor-dot {
+  width: 5px; height: 5px;
+  background: var(--accent);
+}
+.cursor-ring {
+  width: 30px; height: 30px;
+  border: 1px solid rgba(255, 122, 47, 0.45);
+  transition: width 0.25s, height 0.25s, border-color 0.25s;
+}
+.cursor-ring.hot {
+  width: 46px; height: 46px;
+  border-color: var(--accent-2);
+}
+@media (hover: hover) and (pointer: fine) {
+  .js .cursor-dot, .js .cursor-ring { display: block; }
+}
+
+/* ------------------ responsive ------------------ */
+@media (max-width: 1160px) {
+  .rail { display: none; }
+}
+
+@media (max-width: 960px) {
+  .profile-grid,
+  .evidence-grid,
+  .edu-grid { grid-template-columns: 1fr; }
+
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .stat:nth-child(2n) { border-right: 0; }
+  .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+
+  .stack-grid { grid-template-columns: 1fr 1fr; }
+
+  .m-step { grid-template-columns: auto 1fr; }
+  .m-icon { display: none; }
+}
+
+@media (max-width: 860px) {
+  .nav-toggle { display: flex; }
+
+  .nav-links {
+    position: fixed;
+    inset: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.6rem;
+    background: rgba(6, 9, 13, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: opacity 0.35s var(--ease-out), transform 0.35s var(--ease-out);
+  }
+  .nav-links.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .nav-links a { font-size: 1.5rem; }
+  .nav-links a .num { font-size: 0.7rem; }
+  .btn-nav { font-size: 0.85rem !important; }
+}
+
+@media (max-width: 640px) {
+  .hero-content { padding-top: 6.5rem; padding-bottom: 7rem; }
+  .hero-readout { gap: 1rem; font-size: 0.54rem; }
+  .scroll-cue { display: none; }
+  .stack-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .pub-item { grid-template-columns: 1fr; gap: 0.5rem; }
+  .tb-grid { grid-template-columns: 1fr 1fr; }
+  .tb-cell { border-bottom: 1px solid var(--line); }
+  .p-index { font-size: 3.4rem; }
+}
+
+/* ------------------ reduced motion ------------------ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+  .js .intro, .js .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    animation: none !important;
+  }
+  .marquee-track { animation: none; }
+  .cursor-dot, .cursor-ring { display: none !important; }
+  .method-line::after { transform: scaleY(1); }
+}

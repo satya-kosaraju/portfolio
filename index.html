@@ -1,555 +1,671 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Satya Venkatesh Kosaraju — DEM Researcher & Agricultural Engineer</title>
+  <script>document.documentElement.classList.replace('no-js','js');</script>
 
-  <meta name="description" content="M.S. researcher modeling granular flow with the Discrete Element Method (DEM). Fertilizer spreader calibration and validation at Iowa State University × John Deere." />
+  <title>Satya Venkatesh Kosaraju — Mechanical Systems &amp; Simulation Engineer</title>
+
+  <meta name="description" content="Mechanical systems and simulation engineer working across machine design, physical testing, computer vision, automation, and validated multiphysics models." />
   <meta name="author" content="Satya Venkatesh Kosaraju" />
 
-  <meta property="og:title" content="Satya Venkatesh Kosaraju — DEM Researcher" />
-  <meta property="og:description" content="DEM calibration, fertilizer spreader simulation, and granular flow validation. Iowa State University × John Deere." />
+  <meta property="og:title" content="Satya Venkatesh Kosaraju — Mechanical Systems &amp; Simulation Engineer" />
+  <meta property="og:description" content="I design, simulate, build, instrument, and validate machines—from field hardware to decision-ready engineering data." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://satya-kosaraju.github.io/portfolio/" />
+  <!-- Take a screenshot of the hero, save as og-preview.png (1200×630) in this repo, then uncomment: -->
+  <!-- <meta property="og:image" content="https://satya-kosaraju.github.io/portfolio/og-preview.png" /> -->
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ctext x='50%25' y='56%25' font-family='Georgia,serif' font-style='italic' font-size='30' font-weight='600' fill='%23020617' text-anchor='middle' dominant-baseline='middle'%3Esk%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230A0F16'/%3E%3Ctext x='50%25' y='54%25' font-family='monospace' font-size='24' font-weight='700' fill='%23FF7A2F' text-anchor='middle' dominant-baseline='middle'%3E%5Bsk%5D%3C/text%3E%3C/svg%3E" />
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&family=Instrument+Sans:ital,wght@0,400..700;1,400&family=Martian+Mono:wght@300..700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <!-- Scroll progress bar -->
-  <div class="progress-bar" id="progressBar"></div>
+  <a class="skip-link" href="#profile">Skip to content</a>
 
-  <!-- Navigation -->
+  <!-- Scroll progress — velocity ramp -->
+  <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+  <!-- Right telemetry rail (desktop) -->
+  <aside class="rail" id="rail" aria-hidden="true">
+    <div class="rail-label"><span id="railLabel">HERO</span></div>
+    <ul class="rail-dots">
+      <li><a href="#top" class="rail-dot" data-name="HERO"></a></li>
+      <li><a href="#profile" class="rail-dot" data-name="PROFILE"></a></li>
+      <li><a href="#method" class="rail-dot" data-name="METHOD"></a></li>
+      <li><a href="#evidence" class="rail-dot" data-name="EVIDENCE"></a></li>
+      <li><a href="#work" class="rail-dot" data-name="CASE FILES"></a></li>
+      <li><a href="#output" class="rail-dot" data-name="EXPERIENCE"></a></li>
+      <li><a href="#stack" class="rail-dot" data-name="INSTRUMENTS"></a></li>
+      <li><a href="#education" class="rail-dot" data-name="EDUCATION"></a></li>
+      <li><a href="#recognition" class="rail-dot" data-name="RECOGNITION"></a></li>
+      <li><a href="#contact" class="rail-dot" data-name="CONTACT"></a></li>
+    </ul>
+  </aside>
+
+  <!-- =============== NAV =============== -->
   <header class="navbar" id="navbar">
-    <nav class="nav-inner">
+    <nav class="nav-inner" aria-label="Primary">
       <a href="#top" class="logo" aria-label="Home">
-        <span class="logo-mark">sk</span>
+        <span class="logo-mark">[sk]</span>
         <span class="logo-text">
           <span class="logo-name">Satya Kosaraju</span>
-          <span class="logo-sub">DEM · Ag Engineering</span>
+          <span class="logo-sub">Design · Simulation · Test · Automation</span>
         </span>
       </a>
 
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span><span></span>
       </button>
 
       <ul class="nav-links" id="navLinks">
-        <li><a href="#about"><span class="num">01</span> About</a></li>
-        <li><a href="#workflow"><span class="num">02</span> Workflow</a></li>
-        <li><a href="#projects"><span class="num">03</span> Projects</a></li>
-        <li><a href="#publications"><span class="num">04</span> Writing</a></li>
-        <li><a href="#contact"><span class="num">05</span> Contact</a></li>
+        <li><a href="#profile"><span class="num">01</span>Profile</a></li>
+        <li><a href="#method"><span class="num">02</span>Process</a></li>
+        <li><a href="#work"><span class="num">04</span>Work</a></li>
+        <li><a href="#contact"><span class="num">09</span>Contact</a></li>
         <li class="nav-cta-li">
-          <a href="Satya_resume.pdf" class="btn-nav" target="_blank" rel="noopener">
-            Résumé <span aria-hidden="true">↗</span>
-          </a>
+          <a href="Satya_resume.pdf" class="btn-nav" target="_blank" rel="noopener">Résumé <span aria-hidden="true">↗</span></a>
         </li>
       </ul>
     </nav>
   </header>
 
-  <!-- =============== HERO =============== -->
-  <section class="hero" id="top">
-    <!-- live canvas simulation -->
-    <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
-    <div class="hero-grid" aria-hidden="true"></div>
+  <main>
+    <!-- =============== HERO =============== -->
+    <section class="hero" id="top">
+      <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-vignette" aria-hidden="true"></div>
 
-    <div class="hero-content">
-      <div class="hero-status">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span class="status-text">Currently @ Iowa State × John Deere</span>
+      <div class="hud" aria-hidden="true">
+        <span class="hud-corner tl"></span>
+        <span class="hud-corner tr"></span>
+        <span class="hud-corner bl"></span>
+        <span class="hud-corner br"></span>
       </div>
 
-      <h1 class="hero-title">
-        Granular flow,<br>
-        <em>modeled.</em>
-      </h1>
-
-      <p class="hero-sub">
-        I build Discrete Element Method (DEM) simulations of dry fertilizer —
-        calibrating models against experiment and validating them across
-        hopper, impact, and spreader regimes.
-      </p>
-
-      <div class="hero-meta">
-        <div class="hero-meta-item">
-          <span class="meta-k">Role</span>
-          <span class="meta-v">Graduate Researcher</span>
+      <div class="hero-content">
+        <!-- If you've graduated / are job hunting, a stronger pill is:
+             "Open to Simulation &amp; Test Engineering roles" -->
+        <div class="hero-status intro" style="--d:0">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">Engineering analyst · Soil Machine Dynamics Laboratory</span>
         </div>
-        <div class="hero-meta-item">
-          <span class="meta-k">Lab</span>
-          <span class="meta-v">Soil Machine Dynamics, ISU</span>
+
+        <h1 class="hero-title">
+          <span class="line intro" style="--d:1">Machines, measured.</span>
+          <span class="line ramp-text intro" style="--d:2">Systems, engineered.</span>
+        </h1>
+
+        <p class="hero-sub intro" style="--d:3">
+          I turn physical problems into engineered systems—designing hardware,
+          simulating behavior, building test rigs, instrumenting experiments, and
+          converting complex data into decisions that hold up outside the lab.
+        </p>
+
+        <div class="hero-meta intro" style="--d:4">
+          <div class="hero-meta-item">
+            <span class="meta-k">Systems</span>
+            <span class="meta-v">Machines · Robotics · Test Rigs</span>
+          </div>
+          <div class="hero-meta-item">
+            <span class="meta-k">Digital</span>
+            <span class="meta-v">Simulation · CAD · Computer Vision</span>
+          </div>
+          <div class="hero-meta-item">
+            <span class="meta-k">Delivery</span>
+            <span class="meta-v">Prototype · Validate · Automate</span>
+          </div>
         </div>
-        <div class="hero-meta-item">
-          <span class="meta-k">Grad</span>
-          <span class="meta-v">M.S. — May 2026</span>
+
+        <div class="hero-actions intro" style="--d:5">
+          <a href="#work" class="btn-primary" data-magnetic>Explore the work <span aria-hidden="true">↓</span></a>
+          <a href="webdem.html" target="_blank" rel="noopener" class="btn-ghost" data-magnetic>▶ Run the live simulation</a>
         </div>
       </div>
 
-      <div class="hero-actions">
-        <a href="#projects" class="btn-primary">
-          See the work <span aria-hidden="true">↓</span>
-        </a>
-        <a href="webdem.html" target="_blank" rel="noopener" class="btn-ghost">
-          ▶ Run live simulation
-        </a>
+      <div class="hero-readout intro" style="--d:6" aria-hidden="true">
+          <span>DATA STREAM <b id="hudParticles">0000</b></span>
+          <span>SYSTEM ω <b id="hudOmega">0.0</b> rad/s</span>
+        <span>T+<b id="hudTime">00:00.0</b></span>
+      </div>
+
+      <div class="scroll-cue intro" style="--d:6" aria-hidden="true">
+        <span class="cue-line"></span>
+        <span class="cue-text">SCROLL</span>
+      </div>
+    </section>
+
+    <!-- =============== TICKER =============== -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <div class="marquee-group">
+          <span>Mechanical Design</span><i>▸</i>
+          <span>Simulation</span><i>▸</i>
+          <span>Experimental Validation</span><i>▸</i>
+          <span>Computer Vision</span><i>▸</i>
+          <span>Instrumentation</span><i>▸</i>
+          <span>Prototyping</span><i>▸</i>
+          <span>Robotics</span><i>▸</i>
+          <span>Data Automation</span><i>▸</i>
+          <span>Field Engineering</span><i>▸</i>
+        </div>
+        <div class="marquee-group">
+          <span>Mechanical Design</span><i>▸</i>
+          <span>Simulation</span><i>▸</i>
+          <span>Experimental Validation</span><i>▸</i>
+          <span>Computer Vision</span><i>▸</i>
+          <span>Instrumentation</span><i>▸</i>
+          <span>Prototyping</span><i>▸</i>
+          <span>Robotics</span><i>▸</i>
+          <span>Data Automation</span><i>▸</i>
+          <span>Field Engineering</span><i>▸</i>
+        </div>
       </div>
     </div>
 
-    <div class="hero-coordinates" aria-hidden="true">
-      <div class="coord-line coord-h"></div>
-      <div class="coord-line coord-v"></div>
-      <div class="coord-label coord-label-x">x · 0.95 m</div>
-      <div class="coord-label coord-label-y">y · disc</div>
-    </div>
-  </section>
-
-  <!-- Marquee strip -->
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee-track">
-      <span>EDEM</span><span>·</span>
-      <span>Angle of Repose</span><span>·</span>
-      <span>Hopper Discharge</span><span>·</span>
-      <span>Impact Plate</span><span>·</span>
-      <span>Calibration</span><span>·</span>
-      <span>Validation</span><span>·</span>
-      <span>Spinning Disc</span><span>·</span>
-      <span>Urea</span><span>·</span>
-      <span>EDEM</span><span>·</span>
-      <span>Angle of Repose</span><span>·</span>
-      <span>Hopper Discharge</span><span>·</span>
-      <span>Impact Plate</span><span>·</span>
-      <span>Calibration</span><span>·</span>
-      <span>Validation</span><span>·</span>
-      <span>Spinning Disc</span><span>·</span>
-      <span>Urea</span><span>·</span>
-    </div>
-  </div>
-
-  <!-- =============== ABOUT =============== -->
-  <section class="section" id="about">
-    <div class="section-head reveal">
-      <div class="section-tag"><span class="num">§ 01</span> About</div>
-      <h2 class="section-title">Built at the seam between <em>experiment</em> and <em>simulation</em>.</h2>
-    </div>
-
-    <div class="about-grid">
-      <div class="about-prose reveal">
-        <p class="lead">
-          I'm a Master's researcher in Agricultural &amp; Biosystems Engineering
-          at Iowa State University, working at the Soil Machine Dynamics Laboratory
-          in collaboration with John Deere.
-        </p>
-        <p>
-          My thesis — <em>"Optimization of Dry Fertilizer Spreaders: DEM-Based
-          Material Flow Analysis and Experimental Validation"</em> — focuses
-          on calibrating DEM models of urea using angle of repose, then validating
-          them independently against hopper discharge and impact plate experiments.
-        </p>
-        <p>
-          The interesting part isn't the simulation alone or the experiment alone
-          — it's wiring them together so the model actually generalizes beyond
-          its calibration data.
-        </p>
-        <a href="Satya_resume.pdf" target="_blank" rel="noopener" class="link-underline">
-          Download full résumé <span aria-hidden="true">↗</span>
-        </a>
+    <!-- =============== 01 · PROFILE =============== -->
+    <section class="section" id="profile" data-name="PROFILE">
+      <div class="section-head reveal">
+        <div class="eyebrow" data-scramble>01 // PROFILE</div>
+        <h2 class="section-title">Engineering is the full loop: <em>understand, design, build, measure, improve</em>.</h2>
       </div>
 
-      <aside class="about-stats reveal" data-stagger>
+      <div class="profile-grid">
+        <div class="profile-prose reveal">
+          <p class="lead">
+            I work where mechanical hardware, physical testing, and computational
+            tools meet. My strength is not one software package; it is building a
+            reliable path from an unclear field problem to a defensible engineering answer.
+          </p>
+          <p>
+            At Iowa State's Soil Machine Dynamics Laboratory, I analyze agricultural
+            machinery for industry programs using CAD, fabrication, sensors, high-speed
+            imaging, computer vision, Python, and physics-based simulation. Current work
+            includes quantitative wear analysis of tillage components; earlier work
+            established a validated DEM workflow for fertilizer handling systems.
+          </p>
+          <p>
+            I care about traceable measurements, repeatable workflows, and outputs an
+            engineering team can act on: a geometry change, a machine setting, a wear
+            trend, a validated model, or an automated analysis pipeline.
+          </p>
+          <a href="Satya_resume.pdf" target="_blank" rel="noopener" class="link-underline">
+            Download résumé <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+
+        <aside class="spec-card reveal" data-reveal="right">
+          <div class="spec-head">
+            <span>SPEC</span><span>SVK / PROFILE</span>
+          </div>
+          <dl class="spec-rows">
+            <div class="spec-row"><dt>Focus</dt><dd>Mechanical systems &amp; digital engineering</dd></div>
+            <div class="spec-row"><dt>Pipeline</dt><dd>Define → Design → Build → Test → Decide</dd></div>
+            <div class="spec-row"><dt>Analysis</dt><dd>Simulation · vision · statistics · automation</dd></div>
+            <div class="spec-row"><dt>Hardware</dt><dd>Test rigs · sensors · machinery · robotics</dd></div>
+            <div class="spec-row"><dt>Base</dt><dd>Ames, Iowa · USA</dd></div>
+          </dl>
+        </aside>
+      </div>
+
+      <div class="stats-row reveal" data-stagger>
         <div class="stat">
-          <div class="stat-num" data-counter="5">0</div>
-          <div class="stat-label">Engineering projects</div>
+          <div class="stat-num"><span data-counter="5">5</span></div>
+          <div class="stat-label">Engineered machine &amp; mechanism programs</div>
         </div>
         <div class="stat">
-          <div class="stat-num" data-counter="1">0</div>
-          <div class="stat-label">Patent filed</div>
+          <div class="stat-num"><span data-counter="1">1</span></div>
+          <div class="stat-label">Patent · No. 202141009919</div>
         </div>
         <div class="stat">
-          <div class="stat-num" data-counter="3">0</div>
-          <div class="stat-label">Validation methods</div>
+          <div class="stat-num"><span data-counter="3">3</span></div>
+          <div class="stat-label">Independent validation methods</div>
         </div>
         <div class="stat">
-          <div class="stat-num">8.31<span class="stat-unit">/10</span></div>
-          <div class="stat-label">Undergrad GPA · 1st of 106</div>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  <!-- =============== EDUCATION =============== -->
-  <section class="section section-tight" id="education">
-    <div class="section-head reveal">
-      <div class="section-tag"><span class="num">§ 02</span> Education</div>
-    </div>
-
-    <div class="edu-grid">
-      <article class="edu-card reveal">
-        <div class="edu-year">2023 — May 2026</div>
-        <h3 class="edu-degree">M.S., Agricultural &amp; Biosystems Engineering</h3>
-        <div class="edu-school">Iowa State University · Ames, IA</div>
-        <p class="edu-desc">
-          Thesis: <em>Optimization of Dry Fertilizer Spreaders — DEM-Based
-          Material Flow Analysis and Experimental Validation.</em>
-          Research at the Soil Machine Dynamics Laboratory in collaboration with John Deere.
-        </p>
-      </article>
-
-      <article class="edu-card reveal">
-        <div class="edu-year">2019 — 2023</div>
-        <h3 class="edu-degree">B.Tech., Agricultural Engineering</h3>
-        <div class="edu-school">Vignan University · Guntur, India</div>
-        <p class="edu-desc">
-          GPA 8.31/10. <strong>Gold Medal — Best Outgoing Student of the Year</strong>,
-          ranked 1st of 106 students.
-        </p>
-      </article>
-    </div>
-  </section>
-
-  <!-- =============== WORKFLOW =============== -->
-  <section class="section section-dark" id="workflow">
-    <div class="bg-grid" aria-hidden="true"></div>
-
-    <div class="section-head reveal">
-      <div class="section-tag"><span class="num">§ 03</span> DEM Workflow</div>
-      <h2 class="section-title">From physical fertilizer to a <em>validated</em> model.</h2>
-    </div>
-
-    <ol class="workflow">
-      <li class="wf-step reveal">
-        <div class="wf-num">01</div>
-        <div class="wf-body">
-          <h3>Material Characterization</h3>
-          <p>Particle size distribution, shape, density, friction, and coefficient of restitution measured to define input material properties.</p>
-        </div>
-      </li>
-      <li class="wf-step reveal">
-        <div class="wf-num">02</div>
-        <div class="wf-body">
-          <h3>Calibration via Angle of Repose</h3>
-          <p>Static AOR experiments used to tune DEM contact parameters until the simulated heap angle matches the physical pile within tolerance.</p>
-        </div>
-      </li>
-      <li class="wf-step reveal">
-        <div class="wf-num">03</div>
-        <div class="wf-body">
-          <h3>Multi-Method Validation</h3>
-          <p>Independent setups — hopper discharge and impact plate tests — verify the model generalizes beyond calibration, using percentage relative error and confidence intervals.</p>
-        </div>
-      </li>
-      <li class="wf-step reveal">
-        <div class="wf-num">04</div>
-        <div class="wf-body">
-          <h3>Spreader Simulation</h3>
-          <p>Full twin spinning-disc spreader simulations predict distribution patterns and inform machine settings for uniform application.</p>
-        </div>
-      </li>
-    </ol>
-  </section>
-
-  <!-- =============== VIDEO + SIM CTA =============== -->
-  <section class="section" id="demo">
-    <div class="section-head reveal">
-      <div class="section-tag"><span class="num">§ 04</span> See it in motion</div>
-      <h2 class="section-title">A DEM model is only as good as its <em>behavior</em>.</h2>
-    </div>
-
-    <div class="demo-grid">
-      <div class="video-frame reveal">
-        <iframe
-          src="https://www.youtube.com/embed/Ek-IkwTqM0g"
-          title="Fertilizer Spreader DEM Simulation"
-          loading="lazy"
-          allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen></iframe>
-      </div>
-
-      <a href="webdem.html" target="_blank" rel="noopener" class="sim-card reveal">
-        <div class="sim-card-tag">Interactive</div>
-        <div class="sim-card-title">
-          Run the live <em>twin-disc</em> simulation in your browser
-        </div>
-        <div class="sim-card-meta">
-          <span>WebGL · Three.js</span>
-          <span>RPM + flow rate</span>
-        </div>
-        <div class="sim-card-arrow">↗</div>
-      </a>
-    </div>
-  </section>
-
-  <!-- =============== PROJECTS =============== -->
-  <section class="section" id="projects">
-    <div class="section-head reveal">
-      <div class="section-tag"><span class="num">§ 05</span> Selected Work</div>
-      <h2 class="section-title">Five projects. One <em>thread</em>.</h2>
-    </div>
-
-    <div class="projects">
-      <article class="project reveal">
-        <div class="project-meta">
-          <span class="proj-year">2023 — 2026</span>
-          <span class="proj-org">ISU × John Deere</span>
-          <span class="proj-tag">Thesis</span>
-        </div>
-        <h3 class="project-title">DEM Calibration &amp; Multi-Method Validation of Urea</h3>
-        <p class="project-desc">
-          Calibrated an Altair EDEM model of urea fertilizer using angle of repose,
-          then validated independently with hopper discharge and impact plate tests.
-          Evaluated simulation accuracy using percentage relative error, confidence
-          intervals, and repeatability analysis. Processed data in Python, MATLAB, and ImageJ.
-        </p>
-        <div class="project-tags">
-          <span>EDEM</span><span>AOR</span><span>Hopper</span><span>Impact plate</span><span>Python</span>
-        </div>
-      </article>
-
-      <article class="project reveal">
-        <div class="project-meta">
-          <span class="proj-year">2024 — 2026</span>
-          <span class="proj-tag">Spreader</span>
-        </div>
-        <h3 class="project-title">Fertilizer Spreader DEM Simulation</h3>
-        <p class="project-desc">
-          Simulated a twin spinning-disc spreader in EDEM to study particle
-          trajectories, spread pattern uniformity, and sensitivity to RPM,
-          flow rate, and orifice geometry. Built CAD geometries in SolidWorks
-          and processed outputs in Python/MATLAB.
-        </p>
-        <div class="project-tags">
-          <span>EDEM</span><span>SolidWorks</span><span>Pattern uniformity</span><span>MATLAB</span>
-        </div>
-      </article>
-
-      <article class="project reveal">
-        <div class="project-meta">
-          <span class="proj-year">2020 — 2021</span>
-          <span class="proj-org">Patent No. 202141009919</span>
-          <span class="proj-tag proj-tag-accent">Patent</span>
-        </div>
-        <h3 class="project-title">Mechatronic Robotic Device for Precision Irrigation</h3>
-        <p class="project-desc">
-          Patented mechatronic robotic system for self-regulating irrigation,
-          CNN-based weed detection, and targeted herbicide application.
-          Built on Robotic Operating System (ROS), integrating sensors,
-          actuators, and autonomous control logic.
-        </p>
-        <div class="project-tags">
-          <span>ROS</span><span>CNN</span><span>Mechatronics</span><span>Automation</span>
-        </div>
-      </article>
-
-      <article class="project reveal">
-        <div class="project-meta">
-          <span class="proj-year">2022 — 2023</span>
-          <span class="proj-tag">Machinery</span>
-        </div>
-        <h3 class="project-title">Tractor-Mounted Multi-Crop Seedling Transplanter</h3>
-        <p class="project-desc">
-          Concept design for a tractor-mounted seedling transplanter aimed at
-          reducing manual transplanting effort. Contributed mechanism layout,
-          mechanical design, and field-application analysis.
-        </p>
-        <div class="project-tags">
-          <span>Mechanical design</span><span>Field machinery</span><span>CAD</span>
-        </div>
-      </article>
-
-      <article class="project reveal">
-        <div class="project-meta">
-          <span class="proj-year">2020 — 2021</span>
-          <span class="proj-tag">Sustainability</span>
-        </div>
-        <h3 class="project-title">Solar-Integrated Briquetting Machine</h3>
-        <p class="project-desc">
-          Designed a solar-assisted briquetting machine for biomass compaction
-          and sustainable fuel production. Led mechanical design, compaction
-          mechanism planning, and prototype-level analysis.
-        </p>
-        <div class="project-tags">
-          <span>Solar</span><span>Biomass</span><span>Mechanical design</span>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <!-- =============== PUBLICATIONS =============== -->
-  <section class="section section-dark" id="publications">
-    <div class="bg-grid" aria-hidden="true"></div>
-
-    <div class="section-head reveal">
-      <div class="section-tag"><span class="num">§ 06</span> Writing &amp; Talks</div>
-      <h2 class="section-title">Presentations and research output.</h2>
-    </div>
-
-    <ul class="pub-list">
-      <li class="pub-item reveal">
-        <div class="pub-year">2023</div>
-        <div class="pub-body">
-          <h3 class="pub-title">Developing Digital Twins of Cleaning Shoe Separation of Corn Biomass Particles</h3>
-          <div class="pub-authors">S. V. Kosaraju · J.-M. Noh · M. Z. Tekeste · R. T. Chaganti · Y. Zhao</div>
-          <div class="pub-venue">Center for Multiphase Flow Research and Education (CoMFRE) Conference · Iowa State University, Ames, IA</div>
-        </div>
-      </li>
-    </ul>
-  </section>
-
-  <!-- =============== STACK =============== -->
-  <section class="section" id="stack">
-    <div class="section-head reveal">
-      <div class="section-tag"><span class="num">§ 07</span> Stack</div>
-      <h2 class="section-title">Tools I use to model, simulate, and analyze.</h2>
-    </div>
-
-    <div class="stack-grid">
-      <div class="stack-col reveal">
-        <h4>Simulation</h4>
-        <ul>
-          <li>Altair EDEM</li>
-          <li>DEM modeling</li>
-          <li>AcuSolve</li>
-          <li>HyperMesh</li>
-          <li>CFD fundamentals</li>
-        </ul>
-      </div>
-      <div class="stack-col reveal">
-        <h4>CAD &amp; Design</h4>
-        <ul>
-          <li>SolidWorks</li>
-          <li>Fusion 360</li>
-          <li>Creo</li>
-          <li>AutoCAD</li>
-        </ul>
-      </div>
-      <div class="stack-col reveal">
-        <h4>Programming &amp; Data</h4>
-        <ul>
-          <li>Python</li>
-          <li>MATLAB</li>
-          <li>JMP</li>
-          <li>ImageJ · OpenCV</li>
-          <li>Excel</li>
-        </ul>
-      </div>
-      <div class="stack-col reveal">
-        <h4>Fabrication &amp; Lab</h4>
-        <ul>
-          <li>3D printing &amp; scanning</li>
-          <li>Laser cutting</li>
-          <li>CNC milling · lathe</li>
-          <li>Soldering &amp; electronics</li>
-          <li>Hopper/AOR/impact rigs</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- =============== AWARDS =============== -->
-  <section class="section section-tight" id="awards">
-    <div class="section-head reveal">
-      <div class="section-tag"><span class="num">§ 08</span> Recognition</div>
-    </div>
-
-    <div class="awards">
-      <div class="award reveal">
-        <div class="award-mark">★</div>
-        <div class="award-body">
-          <h3>Gold Medal — Best Outgoing Student of the Year</h3>
-          <p>Ranked 1st of 106 students · Vignan University · 2023</p>
+          <div class="stat-num"><span data-counter="7">7</span></div>
+          <div class="stat-label">Core engineering tool families</div>
         </div>
       </div>
-      <div class="award reveal">
-        <div class="award-mark">⌬</div>
-        <div class="award-body">
-          <h3>Patent No. 202141009919</h3>
-          <p>Mechatronic robotic device for self-regulating precision irrigation · Filed 2021</p>
-        </div>
-      </div>
-      <div class="award reveal">
-        <div class="award-mark">◇</div>
-        <div class="award-body">
-          <h3>National Farm Progress Show Ambassador</h3>
-          <p>Boone, IA · Presented Soil Machine Dynamics Lab work to farmers and industry</p>
-        </div>
-      </div>
-      <div class="award reveal">
-        <div class="award-mark">◊</div>
-        <div class="award-body">
-          <h3>Engineering Career Services Ambassador</h3>
-          <p>Iowa State University · Career fair operations and student guidance</p>
-        </div>
-      </div>
-      <div class="award reveal">
-        <div class="award-mark">◯</div>
-        <div class="award-body">
-          <h3>World Food Prize Volunteer</h3>
-          <p>Norman E. Borlaug International Dialogue · Des Moines, IA · 2024</p>
-        </div>
-      </div>
-      <div class="award reveal">
-        <div class="award-mark">▲</div>
-        <div class="award-body">
-          <h3>Professional Memberships</h3>
-          <p>American Society of Agricultural &amp; Biological Engineers (ASABE) · CoMFRE</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- =============== CONTACT =============== -->
-  <section class="section contact-section" id="contact">
-    <div class="bg-grid" aria-hidden="true"></div>
+    <!-- =============== 02 · METHOD =============== -->
+    <section class="section section-dark" id="method" data-name="METHOD">
+      <div class="bg-grid" aria-hidden="true"></div>
 
-    <div class="contact-inner">
-      <div class="section-tag reveal"><span class="num">§ 09</span> Contact</div>
-      <h2 class="contact-title reveal">
-        Let's talk about <em>DEM</em>,<br>
-        machinery, or collaborations.
-      </h2>
+      <div class="section-head reveal">
+        <div class="eyebrow" data-scramble>02 // ENGINEERING PROCESS</div>
+        <h2 class="section-title">From an ambiguous problem to a result the team can <em>use</em>.</h2>
+      </div>
 
-      <div class="contact-grid">
-        <a href="mailto:satya.v.kosaraju@gmail.com" class="contact-card reveal">
-          <span class="cc-label">Email</span>
-          <span class="cc-value">satya.v.kosaraju@gmail.com</span>
-          <span class="cc-arrow">↗</span>
+      <div class="method-wrap" id="methodWrap">
+        <div class="method-line" aria-hidden="true"></div>
+        <ol class="method-steps">
+          <li class="m-step reveal">
+            <div class="m-num">01</div>
+            <div class="m-body">
+              <h3>Define &amp; measure</h3>
+              <p>Translate the field problem into measurable requirements. Establish
+              geometry, loads, material behavior, failure modes, and a clean baseline
+              before selecting the tool.</p>
+            </div>
+            <svg class="m-icon" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="20" cy="44" r="4"/><circle cx="32" cy="44" r="4"/><circle cx="44" cy="44" r="4"/>
+              <circle cx="26" cy="35" r="4"/><circle cx="38" cy="35" r="4"/><circle cx="32" cy="26" r="4"/>
+            </svg>
+          </li>
+          <li class="m-step reveal">
+            <div class="m-num">02</div>
+            <div class="m-body">
+              <h3>Design &amp; model</h3>
+              <p>Develop CAD, test fixtures, algorithms, or physics-based models at the
+              fidelity the decision requires. Prototype early and keep assumptions visible.</p>
+            </div>
+            <svg class="m-icon" viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M10 48 L32 20 L54 48 Z" fill="none"/>
+              <path d="M40 48 A14 14 0 0 0 36.5 39" fill="none"/>
+              <line x1="6" y1="48" x2="58" y2="48"/>
+            </svg>
+          </li>
+          <li class="m-step reveal">
+            <div class="m-num">03</div>
+            <div class="m-body">
+              <h3>Build &amp; validate</h3>
+              <p>Fabricate, instrument, and test. Use independent experiments,
+              uncertainty, repeatability, and image-based measurements to distinguish
+              a convincing picture from a reliable engineering result.</p>
+            </div>
+            <svg class="m-icon" viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M16 12 H48 L38 34 H26 Z" fill="none"/>
+              <line x1="32" y1="34" x2="32" y2="46"/>
+              <line x1="20" y1="52" x2="44" y2="52"/>
+            </svg>
+          </li>
+          <li class="m-step reveal">
+            <div class="m-num">04</div>
+            <div class="m-body">
+              <h3>Automate &amp; communicate</h3>
+              <p>Convert raw measurements into reproducible Python, MATLAB, JMP, or
+              vision workflows. Deliver trends, visuals, and recommendations that make
+              the next engineering decision faster and clearer.</p>
+            </div>
+            <svg class="m-icon" viewBox="0 0 64 64" aria-hidden="true">
+              <ellipse cx="32" cy="36" rx="18" ry="7" fill="none"/>
+              <line x1="32" y1="36" x2="32" y2="20"/>
+              <path d="M12 30 Q6 24 10 18" fill="none"/>
+              <path d="M52 30 Q58 24 54 18" fill="none"/>
+            </svg>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- =============== 03 · EVIDENCE =============== -->
+    <section class="section" id="evidence" data-name="EVIDENCE">
+      <div class="section-head reveal">
+        <div class="eyebrow" data-scramble>03 // LIVE ENGINEERING</div>
+        <h2 class="section-title">One flagship system, exposed from <em>physics to interaction</em>.</h2>
+      </div>
+
+      <div class="evidence-grid">
+        <figure class="video-frame reveal">
+          <iframe
+            src="https://www.youtube.com/embed/Ek-IkwTqM0g"
+            title="Fertilizer Spreader DEM Simulation"
+            loading="lazy"
+            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>
+          <figcaption class="frame-tag">SIM OUTPUT — TWIN-DISC SPREADER</figcaption>
+        </figure>
+
+        <a href="webdem.html" target="_blank" rel="noopener" class="sim-card reveal" data-reveal="right">
+          <div class="sim-tag">Interactive</div>
+          <div class="sim-title">Run the <em>twin-disc</em> simulation in your browser</div>
+          <div class="sim-meta">
+            <span>WebGL · Three.js</span>
+            <span>RPM + feed rate, live</span>
+          </div>
+          <div class="sim-arrow" aria-hidden="true">↗</div>
         </a>
-        <a href="tel:+15159163387" class="contact-card reveal">
-          <span class="cc-label">Phone</span>
-          <span class="cc-value">+1 (515) 916-3387</span>
-          <span class="cc-arrow">↗</span>
-        </a>
-        <a href="https://linkedin.com/in/satya-kosaraju" target="_blank" rel="noopener" class="contact-card reveal">
-          <span class="cc-label">LinkedIn</span>
-          <span class="cc-value">/in/satya-kosaraju</span>
-          <span class="cc-arrow">↗</span>
-        </a>
-        <div class="contact-card contact-card-static reveal">
-          <span class="cc-label">Location</span>
-          <span class="cc-value">Ames, Iowa · USA</span>
+      </div>
+    </section>
+
+    <!-- =============== 04 · CASE FILES =============== -->
+    <section class="section section-dark" id="work" data-name="CASE FILES">
+      <div class="bg-grid" aria-hidden="true"></div>
+
+      <div class="section-head reveal">
+        <div class="eyebrow" data-scramble>04 // ENGINEERING CASE FILES</div>
+        <h2 class="section-title">Across hardware and software, the standard stays the same: <em>make it measurable</em>.</h2>
+      </div>
+
+      <div class="projects">
+        <article class="project featured reveal">
+          <div class="p-index" aria-hidden="true">01</div>
+          <div class="p-head">
+            <span class="p-year">2026 — Present</span>
+            <span class="p-org">ISU · Industry program</span>
+            <span class="p-chip p-chip-accent">Current</span>
+          </div>
+          <h3 class="p-title">Computer-Vision Wear Analysis for Tillage Components</h3>
+          <p class="p-desc">
+            Developing a repeatable inspection pipeline that turns GoPro footage and
+            laboratory measurements into quantitative wear profiles. The workflow
+            combines controlled capture, DaVinci Resolve preprocessing, Fiji/ImageJ,
+            OpenCV segmentation, paired-disc alignment, profile comparison, and
+            zero-intercept quadratic trend fitting for industry-facing decisions.
+          </p>
+          <div class="p-tags">
+            <span>Python</span><span>OpenCV</span><span>ImageJ</span><span>Machine vision</span><span>Trend analysis</span>
+          </div>
+        </article>
+
+        <article class="project reveal">
+          <div class="p-index" aria-hidden="true">02</div>
+          <div class="p-head">
+            <span class="p-year">2023 — 2026</span>
+            <span class="p-chip">Simulation + test</span>
+          </div>
+          <h3 class="p-title">Validated Digital Engineering of Fertilizer Flow</h3>
+          <p class="p-desc">
+            Owned the full simulation–experiment loop for granular machinery: material
+            characterization, SolidWorks test-rig design, fabrication, Altair EDEM
+            calibration, independent validation, and automated data reduction. All five
+            validation targets were within the 15% engineering acceptance criterion,
+            including 8.85% hopper-flow error and −1.43% projected-area error.
+          </p>
+          <div class="p-tags">
+            <span>EDEM</span><span>SolidWorks</span><span>Fabrication</span><span>DAQ</span><span>Python</span>
+          </div>
+        </article>
+
+        <article class="project reveal">
+          <div class="p-index" aria-hidden="true">03</div>
+          <div class="p-head">
+            <span class="p-year">2020 — 2021</span>
+            <span class="p-org">Patent No. 202141009919</span>
+            <span class="p-chip p-chip-accent">Patent</span>
+          </div>
+          <h3 class="p-title">Autonomous Precision-Irrigation Platform</h3>
+          <p class="p-desc">
+            Patented ROS-based agricultural robotic system integrating CNN weed
+            detection, targeted herbicide delivery, sensing, actuation, and
+            self-regulating irrigation control for site-specific input management.
+          </p>
+          <div class="p-tags">
+            <span>ROS</span><span>CNN</span><span>Mechatronics</span><span>Controls</span>
+          </div>
+        </article>
+
+        <article class="project reveal">
+          <div class="p-index" aria-hidden="true">04</div>
+          <div class="p-head">
+            <span class="p-year">2022 — 2023</span>
+            <span class="p-chip">Machinery</span>
+          </div>
+          <h3 class="p-title">Tractor-Mounted Multi-Crop Transplanting System</h3>
+          <p class="p-desc">
+            Developed a field-machinery concept to reduce manual transplanting labor
+            across multiple crops. Integrated mechanism layout, CAD, crop-spacing
+            requirements, manufacturability, and field-use constraints into the design.
+          </p>
+          <div class="p-tags">
+            <span>Mechanism design</span><span>Field machinery</span><span>CAD</span>
+          </div>
+        </article>
+
+        <article class="project reveal">
+          <div class="p-index" aria-hidden="true">05</div>
+          <div class="p-head">
+            <span class="p-year">2020 — 2021</span>
+            <span class="p-chip">Energy</span>
+          </div>
+          <h3 class="p-title">Solar-Integrated Biomass Briquetting Machine</h3>
+          <p class="p-desc">
+            Solar-assisted briquetting machine that compacts loose biomass into
+            usable fuel. Led the mechanical design and compaction mechanism through
+            prototype-level analysis.
+          </p>
+          <div class="p-tags">
+            <span>Solar</span><span>Biomass</span><span>Mechanical design</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- =============== 05 · EXPERIENCE =============== -->
+    <section class="section section-tight" id="output" data-name="EXPERIENCE">
+      <div class="section-head reveal">
+        <div class="eyebrow" data-scramble>05 // EXPERIENCE</div>
+        <h2 class="section-title">Trusted with the path from <em>raw hardware to decision-ready evidence</em>.</h2>
+      </div>
+
+      <ul class="pub-list">
+        <li class="pub-item reveal">
+          <div class="pub-year">2026 —</div>
+          <div class="pub-body">
+            <h3 class="pub-title">Engineering Analyst · Soil Machine Dynamics Laboratory</h3>
+            <div class="pub-authors">Iowa State University · Industry programs</div>
+            <div class="pub-venue">Tillage-component wear analysis · computer vision · profile metrology · engineering reporting</div>
+          </div>
+        </li>
+        <li class="pub-item reveal">
+          <div class="pub-year">2023 — 26</div>
+          <div class="pub-body">
+            <h3 class="pub-title">Graduate Research Assistant · Soil Machine Dynamics Laboratory</h3>
+            <div class="pub-authors">Iowa State University · Industry collaboration</div>
+            <div class="pub-venue">Simulation ownership · experimental design · fabrication · instrumentation · automated analysis</div>
+          </div>
+        </li>
+        <li class="pub-item reveal">
+          <div class="pub-year">2023</div>
+          <div class="pub-body">
+            <h3 class="pub-title">Digital Twins of Cleaning-Shoe Separation of Corn Biomass</h3>
+            <div class="pub-authors">Technical presentation · CoMFRE Conference</div>
+            <div class="pub-venue">Multiphase flow · virtual engineering · agricultural machinery</div>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- =============== 06 · INSTRUMENTS =============== -->
+    <section class="section" id="stack" data-name="INSTRUMENTS">
+      <div class="section-head reveal">
+        <div class="eyebrow" data-scramble>06 // INSTRUMENTS</div>
+        <h2 class="section-title">The bench: <em>design, build, instrument, analyze</em>.</h2>
+      </div>
+
+      <div class="stack-grid">
+        <div class="stack-col reveal">
+          <h4>Simulation &amp; Physics</h4>
+          <ul>
+            <li>Altair EDEM</li>
+            <li>Particle-flow modeling</li>
+            <li>AcuSolve</li>
+            <li>HyperMesh</li>
+            <li>CFD fundamentals</li>
+          </ul>
+        </div>
+        <div class="stack-col reveal">
+          <h4>Design &amp; Build</h4>
+          <ul>
+            <li>SolidWorks</li>
+            <li>Fusion 360</li>
+            <li>Creo</li>
+            <li>AutoCAD</li>
+            <li>Test-rig design</li>
+            <li>Prototyping</li>
+          </ul>
+        </div>
+        <div class="stack-col reveal">
+          <h4>Vision &amp; Automation</h4>
+          <ul>
+            <li>Python</li>
+            <li>MATLAB</li>
+            <li>JMP</li>
+            <li>ImageJ · OpenCV</li>
+            <li>Excel · DaVinci Resolve</li>
+          </ul>
+        </div>
+        <div class="stack-col reveal">
+          <h4>Fabrication &amp; Test</h4>
+          <ul>
+            <li>3D printing &amp; scanning</li>
+            <li>Laser cutting</li>
+            <li>CNC milling · lathe</li>
+            <li>DAQ · force sensors</li>
+            <li>Laser distance sensing</li>
+            <li>Soldering · electronics</li>
+          </ul>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <div>© 2026 · Satya Venkatesh Kosaraju</div>
-      <div class="footer-meta">
-        Built with HTML · CSS · Canvas · Three.js
+    <!-- =============== 07 · EDUCATION =============== -->
+    <section class="section section-tight" id="education" data-name="EDUCATION">
+      <div class="section-head reveal">
+        <div class="eyebrow" data-scramble>07 // EDUCATION</div>
       </div>
+
+      <div class="edu-grid">
+        <article class="edu-card reveal">
+          <div class="edu-year">2023 — 2026</div>
+          <h3 class="edu-degree">M.S., Agricultural &amp; Biosystems Engineering</h3>
+          <div class="edu-school">Iowa State University · Ames, IA</div>
+          <p class="edu-desc">
+            Thesis: <em>Optimization of Dry Fertilizer Spreaders — DEM-Based Material
+            Flow Analysis and Experimental Validation</em>, at the Soil Machine
+            Dynamics Laboratory through industry-supported engineering programs.
+          </p>
+        </article>
+
+        <article class="edu-card reveal">
+          <div class="edu-year">2019 — 2023</div>
+          <h3 class="edu-degree">B.Tech., Agricultural Engineering</h3>
+          <div class="edu-school">Vignan University · Guntur, India</div>
+          <p class="edu-desc">
+            GPA 8.31/10 · <strong>Gold Medal, Best Outgoing Student</strong> —
+            ranked 1st of 106.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- =============== 08 · RECOGNITION =============== -->
+    <section class="section section-tight" id="recognition" data-name="RECOGNITION">
+      <div class="section-head reveal">
+        <div class="eyebrow" data-scramble>08 // RECOGNITION</div>
+      </div>
+
+      <div class="awards" data-stagger>
+        <div class="award reveal">
+          <div class="award-mark">⌬</div>
+          <div class="award-body">
+            <h3>Patent No. 202141009919</h3>
+            <p>Mechatronic robotic device for self-regulating precision irrigation · Filed 2021</p>
+          </div>
+        </div>
+        <div class="award reveal">
+          <div class="award-mark">★</div>
+          <div class="award-body">
+            <h3>Gold Medal — Best Outgoing Student</h3>
+            <p>Ranked 1st of 106 · Vignan University · 2023</p>
+          </div>
+        </div>
+        <div class="award reveal">
+          <div class="award-mark">◇</div>
+          <div class="award-body">
+            <h3>National Farm Progress Show Ambassador</h3>
+            <p>Boone, IA · Presented Soil Machine Dynamics Lab research to farmers and industry</p>
+          </div>
+        </div>
+        <div class="award reveal">
+          <div class="award-mark">◊</div>
+          <div class="award-body">
+            <h3>Engineering Career Services Ambassador</h3>
+            <p>Iowa State University · Career fair operations and student guidance</p>
+          </div>
+        </div>
+        <div class="award reveal">
+          <div class="award-mark">◯</div>
+          <div class="award-body">
+            <h3>World Food Prize Volunteer</h3>
+            <p>Norman E. Borlaug International Dialogue · Des Moines, IA · 2024</p>
+          </div>
+        </div>
+        <div class="award reveal">
+          <div class="award-mark">▲</div>
+          <div class="award-body">
+            <h3>Professional Memberships</h3>
+            <p>ASABE · CoMFRE · UN Food &amp; Agriculture Organization</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============== 09 · CONTACT =============== -->
+    <section class="section contact-section" id="contact" data-name="CONTACT">
+      <div class="bg-grid" aria-hidden="true"></div>
+
+      <div class="contact-inner">
+        <div class="eyebrow reveal" data-scramble>09 // CONTACT</div>
+        <h2 class="contact-title reveal">
+          <span class="line">Building a system</span>
+          <span class="line ramp-text">that must perform?</span>
+        </h2>
+        <p class="contact-sub reveal">
+          Mechanical design, simulation, experimental testing, machine vision,
+          automation—or the difficult work of connecting all five.
+        </p>
+
+        <div class="contact-grid" data-stagger>
+          <a href="mailto:satya.v.kosaraju@gmail.com" class="contact-card reveal">
+            <span class="cc-label">Email</span>
+            <span class="cc-value">satya.v.kosaraju@gmail.com</span>
+            <span class="cc-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a href="tel:+15159163387" class="contact-card reveal">
+            <span class="cc-label">Phone</span>
+            <span class="cc-value">+1 (515) 916-3387</span>
+            <span class="cc-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a href="https://linkedin.com/in/satya-kosaraju" target="_blank" rel="noopener" class="contact-card reveal">
+            <span class="cc-label">LinkedIn</span>
+            <span class="cc-value">/in/satya-kosaraju</span>
+            <span class="cc-arrow" aria-hidden="true">↗</span>
+          </a>
+          <div class="contact-card contact-card-static reveal">
+            <span class="cc-label">Base</span>
+            <span class="cc-value">Ames, Iowa · USA</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- =============== TITLE BLOCK FOOTER =============== -->
+  <footer class="titleblock">
+    <div class="tb-grid">
+      <div class="tb-cell"><span class="tb-k">Name</span><span class="tb-v">Satya Venkatesh Kosaraju</span></div>
+      <div class="tb-cell"><span class="tb-k">Role</span><span class="tb-v">Mechanical Systems &amp; Simulation Engineer</span></div>
+      <div class="tb-cell"><span class="tb-k">Dwg No.</span><span class="tb-v">SVK-PORT-003</span></div>
+      <div class="tb-cell"><span class="tb-k">Rev</span><span class="tb-v">D</span></div>
+      <div class="tb-cell"><span class="tb-k">Date</span><span class="tb-v">2026</span></div>
+      <div class="tb-cell"><span class="tb-k">Sheet</span><span class="tb-v">1 / 1</span></div>
     </div>
+    <div class="tb-credit">© 2026 Satya Venkatesh Kosaraju · Built with HTML · CSS · Canvas · Three.js</div>
   </footer>
+
+  <!-- Reticle cursor (desktop, fine pointers only) -->
+  <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+  <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
 
   <script src="main.js" defer></script>
 </body>
