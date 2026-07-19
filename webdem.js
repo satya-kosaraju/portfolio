@@ -20,8 +20,8 @@ const statActive = document.getElementById("statActive");
 const statLanded = document.getElementById("statLanded");
 const statFps   = document.getElementById("statFps");
 
-let rpm = rpmEl ? +rpmEl.value : 650;
-let pps = ppsEl ? +ppsEl.value : 1200;
+let rpm = rpmEl ? +rpmEl.value : 200;
+let pps = ppsEl ? +ppsEl.value : 3000;
 
 if (rpmVal) rpmVal.textContent = rpm;
 if (ppsVal) ppsVal.textContent = pps;
