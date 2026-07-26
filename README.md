@@ -23,6 +23,8 @@ University's Soil Machine Dynamics Laboratory.
 | --- | --- |
 | `index.html` / `style.css` / `main.js` | Main site |
 | `webdem.html` / `webdem.css` / `webdem.js` | Interactive twin-disc simulation |
+| `satya-presenting.jpg` | Profile editorial image |
+| `og-preview.jpg` | 1200×630 social sharing image |
 | `Satya_resume.pdf` | Résumé |
 
 ## Deploy
