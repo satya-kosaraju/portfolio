@@ -512,4 +512,51 @@
       ring.classList.toggle("hot", !!e.target.closest(hotSel));
     }, { passive: true });
   }
+
+  /* ------------------------------------------
+     Experience accordion — click a role to
+     expand the full bullet list beneath it
+  ------------------------------------------ */
+  document.querySelectorAll(".pub-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const open = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!open));
+    });
+  });
+
+  /* ------------------------------------------
+     Case files — filter chips by focus area
+  ------------------------------------------ */
+  const filterBar = document.querySelector(".filter-bar");
+  if (filterBar) {
+    const chips = filterBar.querySelectorAll(".filter-chip");
+    const projectEls = document.querySelectorAll(".project[data-domain]");
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        chips.forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        const f = chip.dataset.filter;
+        projectEls.forEach((p) => {
+          const domains = (p.dataset.domain || "").split(" ");
+          p.classList.toggle("filtered-out", f !== "all" && !domains.includes(f));
+        });
+      });
+    });
+  }
+
+  /* ------------------------------------------
+     Instruments — live filter as you type
+  ------------------------------------------ */
+  const stackFilter = document.getElementById("stackFilter");
+  if (stackFilter) {
+    const items = document.querySelectorAll(".stack-col li");
+    stackFilter.addEventListener("input", () => {
+      const q = stackFilter.value.trim().toLowerCase();
+      items.forEach((li) => {
+        const hit = q.length > 0 && li.textContent.toLowerCase().includes(q);
+        li.classList.toggle("hit", hit);
+        li.classList.toggle("dim-match", q.length > 0 && !hit);
+      });
+    });
+  }
 })();
